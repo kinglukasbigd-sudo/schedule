@@ -1,9 +1,10 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { freshApp, onboardByTyping, quickAdd } from './helpers';
+import { freshApp, onboardByTyping, openSettings, quickAdd, settle } from './helpers';
 
 async function audit(page: Page, label: string) {
-  await page.waitForTimeout(400); // let enter animations settle
+  // Mid-animation text is partly transparent, which axe reports as low contrast.
+  await settle(page);
   const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
   const serious = violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
   expect(
@@ -35,7 +36,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Tasks' }).click();
     await audit(page, 'tasks');
-    await page.getByRole('button', { name: 'Settings' }).first().click();
+    await openSettings(page);
     await audit(page, 'settings');
     await page.getByRole('button', { name: 'Edit timetable' }).click();
     await audit(page, 'timetable');
@@ -43,8 +44,11 @@ for (const scheme of ['light', 'dark'] as const) {
 }
 
 async function onboardByTypingFromTypeStep(page: Page) {
+  // Wait for each step: a second click during the transition would hit the outgoing screen.
   await page.getByRole('button', { name: 'Back' }).click();
+  await expect(page.getByRole('heading', { name: 'How do you have it?', level: 1 })).toBeVisible();
   await page.getByRole('button', { name: 'Back' }).click();
+  await expect(page.getByTestId('start')).toBeVisible();
   await onboardByTyping(page);
 }
 
@@ -63,14 +67,20 @@ test('keyboard only: add a task and close the sheet with Escape', async ({ page 
 });
 
 test('tap targets are at least 44px', async ({ page }) => {
+  const smallTargets = () =>
+    page.evaluate(() =>
+      [...document.querySelectorAll<HTMLElement>('button, [role=button], [role=checkbox], [role=radio], a[href], input, textarea')]
+        .filter((el) => el.offsetParent !== null && !el.closest('[aria-hidden=true]'))
+        .map((el) => ({ el, r: el.getBoundingClientRect() }))
+        .filter(({ r }) => r.width > 0 && (r.height < 44 || r.width < 44))
+        .map(({ el, r }) => `${el.tagName} "${(el.getAttribute('aria-label') ?? el.textContent ?? '').trim().slice(0, 30)}" ${Math.round(r.width)}x${Math.round(r.height)}`),
+    );
   await freshApp(page);
   await onboardByTyping(page);
-  const small = await page.evaluate(() =>
-    [...document.querySelectorAll<HTMLElement>('button, [role=button], [role=checkbox], [role=radio], a[href], input, textarea')]
-      .filter((el) => el.offsetParent !== null && !el.closest('[aria-hidden=true]'))
-      .map((el) => ({ el, r: el.getBoundingClientRect() }))
-      .filter(({ r }) => r.width > 0 && (r.height < 44 || r.width < 44))
-      .map(({ el, r }) => `${el.tagName} "${(el.getAttribute('aria-label') ?? el.textContent ?? '').trim().slice(0, 30)}" ${Math.round(r.width)}x${Math.round(r.height)}`),
-  );
-  expect(small).toEqual([]);
+  // Measure after enter animations: the FAB scales in from 60 %.
+  await settle(page);
+  expect(await smallTargets()).toEqual([]);
+  await openSettings(page);
+  await settle(page);
+  expect(await smallTargets()).toEqual([]);
 });

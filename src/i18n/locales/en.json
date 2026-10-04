@@ -157,7 +157,8 @@
     "completed": "Done: {{title}}",
     "reopened": "Reopened: {{title}}",
     "deleted": "Deleted: {{title}}",
-    "subjectDeleted": "Deleted {{name}}"
+    "subjectDeleted": "Deleted {{name}}",
+    "saveFailed": "Couldn't save — your device storage is full."
   },
   "settings": {
     "title": "Settings",

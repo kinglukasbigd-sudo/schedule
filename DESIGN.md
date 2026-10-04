@@ -306,8 +306,8 @@ move selection. Full width in cards; segments never shrink below 44 px.
 
 ### Swatch
 32 px circle in a 44 px target; selected = 2 px `ink` ring at 2 px offset plus a check in the
-swatch's fg colour. Accent swatches: 8 in **two rows of four** below 400 px width (eight 44 px
-targets don't fit a 311 px card row), one row of eight otherwise. Subject swatches: 11 presets
+swatch's fg colour. Accent swatches: 8 in **two rows of four** below `sm` (640 px; eight 44 px
+targets need a 352 px row, phone cards have 311–348 px — D-037), one row of eight otherwise. Subject swatches: 11 presets
 (+ current custom hue), wrapping rows of six. `radiogroup` semantics with colour names as labels.
 
 ### Checkbox

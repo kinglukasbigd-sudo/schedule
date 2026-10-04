@@ -157,7 +157,8 @@
     "completed": "Erledigt: {{title}}",
     "reopened": "Wieder offen: {{title}}",
     "deleted": "Gelöscht: {{title}}",
-    "subjectDeleted": "{{name}} gelöscht"
+    "subjectDeleted": "{{name}} gelöscht",
+    "saveFailed": "Konnte nicht speichern – der Speicher deines Geräts ist voll."
   },
   "settings": {
     "title": "Einstellungen",

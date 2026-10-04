@@ -2,7 +2,20 @@ import { differenceInCalendarDays, format } from 'date-fns';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { fromDateKey } from '@/domain/schedule';
+import type { Language } from '@/domain/types';
 import { dateLocale } from '@/i18n';
+
+/** German writes the day of the month as an ordinal ("Montag, 5. Oktober", "Mo., 5. Okt."). */
+const PATTERNS = {
+  fullDate: { en: 'EEEE, d MMMM', mk: 'EEEE, d MMMM', de: 'EEEE, d. MMMM' },
+  dayMonth: { en: 'd MMM', mk: 'd MMM', de: 'd. MMM' },
+  weekdayDayMonth: { en: 'EEE d MMM', mk: 'EEE d MMM', de: 'EEE, d. MMM' },
+} satisfies Record<string, Record<Language, string>>;
+
+export function datePattern(name: keyof typeof PATTERNS, language: string): string {
+  const patterns: Record<string, string> = PATTERNS[name];
+  return patterns[language] ?? PATTERNS[name].en;
+}
 
 export function capitalizeFirst(s: string): string {
   return s.charAt(0).toLocaleUpperCase() + s.slice(1);
@@ -20,8 +33,8 @@ export function useFormat() {
       locale,
       weekday: (d: Date) => capitalizeFirst(fmt(d, 'EEEE')),
       weekdayShort: (d: Date) => capitalizeFirst(fmt(d, 'EEE')),
-      dayMonth: (d: Date) => fmt(d, 'd MMM'),
-      fullDate: (d: Date) => capitalizeFirst(fmt(d, 'EEEE, d MMMM')),
+      dayMonth: (d: Date) => fmt(d, datePattern('dayMonth', language)),
+      fullDate: (d: Date) => capitalizeFirst(fmt(d, datePattern('fullDate', language))),
       monthDay: (d: Date) => fmt(d, 'd'),
       /**
        * "Today", "Tomorrow", "Friday", or "Mon 12 Oct" further out.
@@ -35,7 +48,7 @@ export function useFormat() {
         if (diff === 1) return t(inline ? 'time.tomorrowInline' : 'time.tomorrow');
         if (diff === -1) return t(inline ? 'time.yesterdayInline' : 'time.yesterday');
         if (diff > 1 && diff < 7) return cap(fmt(d, 'EEEE'));
-        return cap(fmt(d, 'EEE d MMM'));
+        return cap(fmt(d, datePattern('weekdayDayMonth', language)));
       },
       /** "in 5 min", "in 1 h 20 min". */
       countdown: (minutes: number) => {

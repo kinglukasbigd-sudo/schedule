@@ -276,7 +276,7 @@ EN, MK, DE everywhere: UI, quick-add grammar, OCR, importer keywords, dates, plu
 
 ## 3. Data model
 
-All persisted types live in `src/domain/types.ts`. Stored in Dexie (IndexedDB), schema in §3.3.
+All persisted types live in `src/logic/types.ts` (D-044). Stored in Dexie (IndexedDB), schema in §3.3.
 Every stored entity has a string `id` (ULID-style, sortable), `createdAt` and `updatedAt`
 (epoch ms, for ordering and backups only — never for scheduling).
 
@@ -1006,7 +1006,7 @@ tests including every edge case marked as testable above.
 | Task editing | one sheet (form + Save) | Quick add sheet (create) + detail sheet (live-edit, no Save) |
 | Next lesson | 14-day search, strictly after now | 120-day horizon, same-day rule, holidays, rotation |
 | Toast | `Toast`, 5 s | renamed `Snackbar`, 6 s, pause on hover/focus/press, ⌘Z history, FAB lifts above it |
-| Accent swatches | 8 in one row (≈ 35 px targets on 375 px — below the 44 px rule) | 2 × 4 below 400 px |
+| Accent swatches | 8 in one row (≈ 35 px targets on 375 px — below the 44 px rule) | 2 × 4 below 640 px (D-037; already fixed in v1) |
 | Quick-add words | includes "final" (test) | "final" removed ("final draft"); see R-12 |
 | Tests after their date | become overdue | *written* (never overdue), *Written* group |
 | PWA manifest | `orientation: 'portrait'` | `any` (N-7) |

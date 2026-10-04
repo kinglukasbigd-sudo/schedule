@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent, type
 import { useTranslation } from 'react-i18next';
 import { Button, IconButton } from '@/components/Button';
 import { Icon, type IconName } from '@/components/Icon';
+import { ScreenFrame } from '@/components/ScreenFrame';
 import { Segmented } from '@/components/Segmented';
 import { useSubjects } from '@/db/hooks';
 import { applyDraft } from '@/db/repo';
@@ -101,7 +102,7 @@ export function SetupFlow({ firstRun, onDone, onCancel }: SetupFlowProps) {
   return (
     <div className="mx-auto flex min-h-screen max-w-content flex-col px-4" data-testid={`setup-${step.name}`}>
       <AnimatePresence mode="wait" initial={false} custom={direction}>
-        <m.div
+        <ScreenFrame
           key={step.name}
           initial={{ opacity: 0, x: direction * 32 }}
           animate={{ opacity: 1, x: 0 }}
@@ -110,7 +111,7 @@ export function SetupFlow({ firstRun, onDone, onCancel }: SetupFlowProps) {
           className="flex flex-1 flex-col"
         >
           {content}
-        </m.div>
+        </ScreenFrame>
       </AnimatePresence>
     </div>
   );

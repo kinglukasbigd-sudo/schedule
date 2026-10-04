@@ -1,8 +1,22 @@
-/** ISO weekday: 1 = Monday … 7 = Sunday. */
-export type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;
-
-export const TASK_KINDS = ['homework', 'assignment', 'test'] as const;
-export type TaskKind = (typeof TASK_KINDS)[number];
+/**
+ * The shapes the v1 screens work with. Stored data is the v2 model in `@/logic/types`; the
+ * screens get these views of it through `@/db/hooks` and `@/db/legacy` until they are rebuilt
+ * on the v2 model (D-045). Shared definitions come from the v2 model.
+ */
+export {
+  ACCENTS,
+  LANGUAGES,
+  TASK_KINDS,
+  THEMES,
+  type Accent,
+  type Language,
+  type Settings,
+  type TaskKind,
+  type ThemePref,
+  type Weekday,
+} from '@/logic/types';
+export { DEFAULT_SETTINGS } from '@/logic/constants';
+import type { TaskKind, Weekday } from '@/logic/types';
 
 export const SUBJECT_COLORS = [
   'sky',
@@ -18,15 +32,6 @@ export const SUBJECT_COLORS = [
   'stone',
 ] as const;
 export type SubjectColor = (typeof SUBJECT_COLORS)[number];
-
-export const ACCENTS = ['blue', 'indigo', 'violet', 'pink', 'red', 'orange', 'green', 'graphite'] as const;
-export type Accent = (typeof ACCENTS)[number];
-
-export const THEMES = ['system', 'light', 'dark'] as const;
-export type ThemePref = (typeof THEMES)[number];
-
-export const LANGUAGES = ['en', 'mk', 'de'] as const;
-export type Language = (typeof LANGUAGES)[number];
 
 export interface Subject {
   id: string;
@@ -71,20 +76,6 @@ export interface Task {
   createdAt: number;
   updatedAt: number;
 }
-
-export interface Settings {
-  theme: ThemePref;
-  accent: Accent;
-  language: Language;
-  onboarded: boolean;
-}
-
-export const DEFAULT_SETTINGS: Settings = {
-  theme: 'system',
-  accent: 'blue',
-  language: 'en',
-  onboarded: false,
-};
 
 /** A timetable as it comes out of an importer, before subjects exist in the database. */
 export interface DraftCell {

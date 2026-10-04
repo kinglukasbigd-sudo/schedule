@@ -1,7 +1,15 @@
 import { expect, type Page } from '@playwright/test';
 
+/**
+ * Fixed instants for page.clock. The browser runs in Europe/Skopje (playwright.config.ts), which is
+ * on CEST (UTC+2) until 25 October 2026. The offset is written out so that the instant doesn't
+ * depend on the time zone of the machine running the tests: a bare "2026-10-05T09:10:00" is parsed
+ * in Node's zone and lands two hours later on a UTC machine.
+ */
 /** Monday 5 October 2026, 09:10 — during period 2 of the sample timetable. */
-export const MONDAY_MORNING = new Date('2026-10-05T09:10:00');
+export const MONDAY_MORNING = new Date('2026-10-05T09:10:00+02:00');
+/** Wednesday 7 October 2026, 07:30 — before the first lesson (Chemistry, 08:00). */
+export const WEDNESDAY_EARLY = new Date('2026-10-07T07:30:00+02:00');
 
 export const SAMPLE_WEEK: Record<number, string> = {
   1: 'Mathematics, English, Biology, Biology, Physical Education',
@@ -15,6 +23,42 @@ export async function freshApp(page: Page, at: Date = MONDAY_MORNING) {
   await page.clock.install({ time: at });
   await page.goto('/');
   await expect(page.getByTestId('setup-welcome')).toBeVisible();
+}
+
+/**
+ * Wait until animations have finished: no Web Animation is running (framer-motion runs opacity
+ * and transforms there) and inline styles have stopped changing (it drives other values, like
+ * height, by writing styles each frame). Use before measuring sizes or contrast: mid-animation
+ * elements are scaled or partly transparent.
+ */
+export async function settle(page: Page) {
+  const snapshot = () =>
+    page.evaluate(() => {
+      const running = document.getAnimations().filter((a) => a.playState === 'running').length;
+      const styles = [...document.querySelectorAll('[style]')].map((el) => el.getAttribute('style')).join('\n');
+      return { running, styles };
+    });
+  let last = await snapshot();
+  await expect
+    .poll(
+      async () => {
+        const now = await snapshot();
+        const settled = now.running === 0 && now.styles === last.styles;
+        last = now;
+        return settled;
+      },
+      { intervals: [100], timeout: 5_000 },
+    )
+    .toBe(true);
+}
+
+/**
+ * Open Settings from Today or Week and wait for it. Screens cross-fade, so without the wait a
+ * locator can still match the outgoing screen (e.g. Today's "11:20 Physical Education" lesson).
+ */
+export async function openSettings(page: Page) {
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
 }
 
 /** The typed onboarding path, start to finish. */

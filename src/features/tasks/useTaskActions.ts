@@ -5,7 +5,10 @@ import type { Task } from '@/domain/types';
 import { tapFeedback } from '@/lib/haptics';
 import { useUI } from '@/state/ui';
 
-/** Complete / reopen / delete with an undo toast and a screen-reader announcement. */
+/**
+ * Complete / reopen / delete with an undo toast. The toast host is itself a polite live region, so
+ * a change that shows a toast is not announced again; one without a toast is announced instead.
+ */
 export function useTaskActions() {
   const { t } = useTranslation();
   const showToast = useUI((s) => s.showToast);
@@ -18,10 +21,9 @@ export function useTaskActions() {
       await setTaskDone(task.id, true);
       void tapFeedback();
       const message = t('toast.completed', { title: label(task) });
-      announce(message);
       showToast({ message, action: { label: t('common.undo'), run: () => void setTaskDone(task.id, false) } });
     },
-    [t, label, showToast, announce],
+    [t, label, showToast],
   );
 
   const reopen = useCallback(
@@ -36,8 +38,8 @@ export function useTaskActions() {
     async (task: Task) => {
       const snapshot = await deleteTask(task.id);
       const message = t('toast.deleted', { title: label(task) });
-      announce(message);
       if (snapshot) showToast({ message, action: { label: t('common.undo'), run: () => void restoreTask(snapshot) } });
+      else announce(message);
     },
     [t, label, showToast, announce],
   );

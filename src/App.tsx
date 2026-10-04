@@ -1,6 +1,7 @@
-import { AnimatePresence, LazyMotion, MotionConfig, m } from 'framer-motion';
+import { AnimatePresence, LazyMotion, MotionConfig } from 'framer-motion';
 import { useEffect } from 'react';
 import { Fab } from '@/components/Fab';
+import { ScreenFrame } from '@/components/ScreenFrame';
 import { TabBar } from '@/components/TabBar';
 import { LiveRegion, ToastHost } from '@/components/Toast';
 import { SetupFlow } from '@/features/onboarding/SetupFlow';
@@ -10,10 +11,11 @@ import { SheetHost } from '@/features/sheets/SheetHost';
 import { TasksScreen } from '@/features/tasks/TasksScreen';
 import { TodayScreen } from '@/features/today/TodayScreen';
 import { WeekScreen } from '@/features/week/WeekScreen';
-import { setLanguage } from '@/i18n';
+import i18n, { setLanguage } from '@/i18n';
 import { cx } from '@/lib/cx';
 import { fade, spring } from '@/lib/motion';
 import { useApplyAppearance } from '@/lib/useTheme';
+import { onDataError } from '@/state/data';
 import { useSettings } from '@/state/settings';
 import { bindHistory, useUI, type Tab } from '@/state/ui';
 
@@ -39,6 +41,8 @@ export function App() {
     void setLanguage(settings.language);
   }, [settings.language]);
   useEffect(() => bindHistory(), []);
+  // A write that failed after the screen already showed it (E-19).
+  useEffect(() => onDataError(() => useUI.getState().showToast({ message: i18n.t('toast.saveFailed') })), []);
 
   if (!hydrated) return null;
 
@@ -57,7 +61,7 @@ export function App() {
       <>
         <main className={cx('pb-screen mx-auto px-4', wide ? 'max-w-wide' : 'max-w-content')}>
           <AnimatePresence mode="wait" initial={false}>
-            <m.div
+            <ScreenFrame
               key={top ? top.name : tab}
               initial={top ? { opacity: 0, x: 24 } : { opacity: 0 }}
               animate={{ opacity: 1, x: 0 }}
@@ -65,7 +69,7 @@ export function App() {
               transition={top ? spring.gentle : fade}
             >
               {top?.name === 'settings' ? <SettingsScreen /> : top?.name === 'timetable' ? <TimetableScreen /> : <Screen />}
-            </m.div>
+            </ScreenFrame>
           </AnimatePresence>
         </main>
         <AnimatePresence>{!top && <Fab key="fab" onClick={() => openSheet({ type: 'task' })} />}</AnimatePresence>

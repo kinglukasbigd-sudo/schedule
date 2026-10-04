@@ -5,7 +5,7 @@ import { IconButton } from '@/components/Button';
 import { Icon, type IconName } from '@/components/Icon';
 import { ScreenHeader, SectionLabel } from '@/components/ScreenHeader';
 import { Segmented } from '@/components/Segmented';
-import { eraseEverything, exportBackup, parseBackup, restoreBackup, type Backup } from '@/db/backup';
+import type { Backup } from '@/db/backup';
 import { useSubjects } from '@/db/hooks';
 import { ACCENTS, LANGUAGES, THEMES, type Accent } from '@/domain/types';
 import { LANGUAGE_NAMES } from '@/i18n';
@@ -21,6 +21,7 @@ export function SettingsScreen() {
   const hydrate = useSettings((s) => s.hydrate);
   const back = useUI((s) => s.back);
   const push = useUI((s) => s.push);
+  const setTab = useUI((s) => s.setTab);
   const openSheet = useUI((s) => s.openSheet);
   const showToast = useUI((s) => s.showToast);
   const { list: subjects } = useSubjects();
@@ -35,10 +36,14 @@ export function SettingsScreen() {
 
   /** Replace all data, keeping a snapshot so the change can be undone. */
   const replaceAll = async (next: Backup | null, message: string) => {
+    // Backup code loads when it's used, not with the app (N-1).
+    const { eraseEverything, exportBackup, restoreBackup } = await import('@/db/backup');
     const snapshot = await exportBackup();
     if (next) await restoreBackup(next);
     else await eraseEverything();
     await hydrate();
+    // Erasing lands on the welcome flow, which leads to Today; undoing the erase lands there too.
+    if (!next) setTab('today');
     showToast({
       message,
       action: {
@@ -49,6 +54,7 @@ export function SettingsScreen() {
   };
 
   const onExport = async () => {
+    const { exportBackup } = await import('@/db/backup');
     const backup = await exportBackup();
     const name = `term-backup-${backup.exportedAt.slice(0, 10)}.json`;
     const file = new File([JSON.stringify(backup, null, 2)], name, { type: 'application/json' });
@@ -71,6 +77,7 @@ export function SettingsScreen() {
 
   const onImport = async (file: File) => {
     try {
+      const { parseBackup } = await import('@/db/backup');
       const backup = parseBackup(JSON.parse(await file.text()));
       await replaceAll(backup, t('settings.imported'));
     } catch {
@@ -97,7 +104,8 @@ export function SettingsScreen() {
               <p id="accent-label" className="mb-2 text-small font-medium text-ink-2">
                 {t('settings.accent')}
               </p>
-              <div role="radiogroup" aria-labelledby="accent-label" className="grid grid-cols-8 gap-1">
+              {/* Eight 44px targets need a 352px row; phone cards are narrower, so 2 × 4 until sm (D-037). */}
+              <div role="radiogroup" aria-labelledby="accent-label" className="grid grid-cols-4 gap-1 sm:grid-cols-8">
                 {ACCENTS.map((a) => (
                   <AccentSwatch key={a} accent={a} selected={settings.accent === a} onSelect={() => update({ accent: a })} />
                 ))}

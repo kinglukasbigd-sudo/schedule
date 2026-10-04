@@ -46,8 +46,9 @@ function wordsToText(words: WordBox[]): string {
     .join('\n');
 }
 
+/** A file must show some timetable structure (a grid or day names) to count as a timetable. */
 export function wordsToDraft(words: WordBox[]): DraftTimetable | null {
-  return parseLayout(words) ?? parseTimetableText(wordsToText(words));
+  return parseLayout(words) ?? parseTimetableText(wordsToText(words), { unlabelled: false });
 }
 
 /**
