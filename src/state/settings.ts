@@ -34,12 +34,15 @@ function mirror(settings: Settings) {
   }
 }
 
+const freshSettings = (): Settings => ({ ...DEFAULT_SETTINGS, language: detectLanguage() });
+
 export const useSettings = create<SettingsState>((set, get) => ({
-  settings: { ...DEFAULT_SETTINGS, language: detectLanguage() },
+  settings: freshSettings(),
   hydrated: false,
   hydrate: async () => {
-    const stored = await loadSettings().catch(() => null);
-    const settings = stored ?? get().settings;
+    // Nothing stored means a first run or erased data: start fresh. Keeping the in-memory
+    // settings here would keep `onboarded` after "Erase everything".
+    const settings = (await loadSettings().catch(() => null)) ?? freshSettings();
     mirror(settings);
     set({ settings, hydrated: true });
   },
@@ -50,7 +53,7 @@ export const useSettings = create<SettingsState>((set, get) => ({
     saveSettings(settings).catch((err: unknown) => console.error('[settings]', err));
   },
   reset: () => {
-    const settings = { ...DEFAULT_SETTINGS, language: detectLanguage() };
+    const settings = freshSettings();
     set({ settings });
     mirror(settings);
   },

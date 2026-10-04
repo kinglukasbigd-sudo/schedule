@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { freshApp, onboardByTyping, quickAdd } from './helpers';
+import { WEDNESDAY_EARLY, freshApp, onboardByTyping, openSettings, quickAdd } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   await freshApp(page);
@@ -40,23 +40,25 @@ test('completing shows undo, and undo restores the task', async ({ page }) => {
   const row = page.getByTestId('task-row').filter({ hasText: 'English worksheet' });
   await row.getByRole('checkbox').click();
   await expect(row).toBeHidden();
-  const toast = page.getByText('Done: English worksheet');
-  await expect(toast).toBeVisible();
-  await page.getByRole('button', { name: 'Undo' }).click();
+  const toast = page.getByTestId('toast');
+  await expect(toast).toContainText('Done: English worksheet');
+  await toast.getByRole('button', { name: 'Undo' }).click();
   await expect(page.getByTestId('task-row').filter({ hasText: 'English worksheet' })).toBeVisible();
 });
 
 test('next up puts overdue first, then tests by lead time', async ({ page }) => {
+  // Tuesday has no Biology lesson, so the worksheet is due at the end of Tuesday.
   await quickAdd(page, 'Bio worksheet tomorrow');
   await quickAdd(page, 'Chemistry test wednesday');
-  await expect(page.getByTestId('next-up')).toContainText('Chemistry test');
+  // Monday: the test (Wednesday 08:00, 2 days' lead) outranks homework due tomorrow night.
+  const top = page.getByTestId('next-up').getByRole('button').first();
+  await expect(top).toContainText('Chemistry test');
 
-  // Move the clock to Tuesday evening: the worksheet is now overdue.
-  await page.clock.fastForward('34:00:00');
+  // Wednesday before school: the worksheet is overdue and goes first, even ahead of the test.
+  await page.clock.setSystemTime(WEDNESDAY_EARLY);
   await page.reload();
-  const next = page.getByTestId('next-up');
-  await expect(next).toContainText('Bio worksheet');
-  await expect(next).toContainText('Overdue');
+  await expect(top).toContainText('Bio worksheet');
+  await expect(top).toContainText('Overdue');
 });
 
 test('edit and delete with undo', async ({ page }) => {
@@ -90,9 +92,8 @@ test('adding from a lesson in the week grid', async ({ page }) => {
 });
 
 test('the Android/browser back button closes a sheet before leaving a screen', async ({ page }) => {
-  await page.getByRole('button', { name: 'Settings' }).first().click();
-  await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
-  await page.getByRole('button', { name: 'Biology' }).click();
+  await openSettings(page);
+  await page.getByRole('button', { name: 'Biology', exact: true }).click();
   await expect(page.getByTestId('subject-sheet')).toBeVisible();
   await page.goBack();
   await expect(page.getByTestId('subject-sheet')).toBeHidden();

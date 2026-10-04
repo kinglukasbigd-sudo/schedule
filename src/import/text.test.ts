@@ -70,6 +70,12 @@ describe('parseTimetableText', () => {
     expect(subjectsOf(draft, 1)).toEqual(['0:Math', '1:Fr', '2:Bio']);
   });
 
+  it('only guesses days for unlabelled lines when asked to (typed text, not files)', () => {
+    expect(parseTimetableText('Shopping list: milk, eggs, bread.', { unlabelled: false })).toBeNull();
+    expect(subjectsOf(parseTimetableText('Math, English\nBio, PE', { unlabelled: false }), 1)).toBeUndefined();
+    expect(subjectsOf(parseTimetableText('Monday: Math, English', { unlabelled: false }), 1)).toEqual(['0:Math', '1:English']);
+  });
+
   it('returns null for nothing useful', () => {
     expect(parseTimetableText('')).toBeNull();
     expect(parseTimetableText('-, -')).toBeNull();

@@ -1,10 +1,10 @@
 import { expect, test } from '@playwright/test';
-import { freshApp, onboardByTyping } from './helpers';
+import { freshApp, onboardByTyping, openSettings } from './helpers';
 
 test('theme, accent and language persist across reloads', async ({ page }) => {
   await freshApp(page);
   await onboardByTyping(page);
-  await page.getByRole('button', { name: 'Settings' }).first().click();
+  await openSettings(page);
 
   await page.getByRole('radio', { name: 'Dark' }).click();
   await page.getByRole('radio', { name: 'Green' }).click();
@@ -23,8 +23,8 @@ test('theme, accent and language persist across reloads', async ({ page }) => {
 test('renaming and recolouring a subject updates the week', async ({ page }) => {
   await freshApp(page);
   await onboardByTyping(page);
-  await page.getByRole('button', { name: 'Settings' }).first().click();
-  await page.getByRole('button', { name: 'Physical Education' }).click();
+  await openSettings(page);
+  await page.getByRole('button', { name: 'Physical Education', exact: true }).click();
   const sheet = page.getByTestId('subject-sheet');
   await sheet.locator('#subject-name').fill('Sport');
   await sheet.getByRole('button', { name: 'Lime' }).click();
@@ -36,7 +36,7 @@ test('renaming and recolouring a subject updates the week', async ({ page }) => 
 test('backup export, erase, and restore round-trips everything', async ({ page }, info) => {
   await freshApp(page);
   await onboardByTyping(page);
-  await page.getByRole('button', { name: 'Settings' }).first().click();
+  await openSettings(page);
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export backup' }).click();
   const file = info.outputPath('backup.json');
@@ -46,18 +46,18 @@ test('backup export, erase, and restore round-trips everything', async ({ page }
   await page.getByRole('button', { name: 'Tap again to erase everything' }).click();
   await expect(page.getByTestId('setup-welcome')).toBeVisible();
   // Undo is offered even for erase.
-  await page.getByRole('button', { name: 'Undo' }).click();
+  await page.getByTestId('toast').getByRole('button', { name: 'Undo' }).click();
   await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Settings' }).first().click();
+  await openSettings(page);
   await page.locator('input[type=file][accept*=json]').setInputFiles(file);
-  await expect(page.getByText('Backup restored')).toBeVisible();
+  await expect(page.getByTestId('toast')).toContainText('Backup restored');
 });
 
 test('timetable edits save automatically', async ({ page }) => {
   await freshApp(page);
   await onboardByTyping(page);
-  await page.getByRole('button', { name: 'Settings' }).first().click();
+  await openSettings(page);
   await page.getByRole('button', { name: 'Edit timetable' }).click();
   await page.getByTestId('cell-4-4').click();
   await page.getByTestId('cell-sheet').locator('#cell-subject').fill('Drama');

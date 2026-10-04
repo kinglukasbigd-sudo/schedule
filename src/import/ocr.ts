@@ -29,7 +29,7 @@ export async function recognizeWords(
   onProgress: (fraction: number) => void,
   signal?: AbortSignal,
 ): Promise<WordBox[]> {
-  const [{ createWorker, OEM }, workerPath, corePath] = await Promise.all([
+  const [{ createWorker, OEM, PSM }, workerPath, corePath] = await Promise.all([
     import('tesseract.js'),
     import('tesseract.js/dist/worker.min.js?url').then((m) => m.default),
     import('tesseract.js-core/tesseract-core-simd-lstm.wasm.js?url').then((m) => m.default),
@@ -47,6 +47,10 @@ export async function recognizeWords(
   const abort = () => void worker.terminate();
   signal?.addEventListener('abort', abort, { once: true });
   try {
+    // Timetables are ruled grids: the default automatic segmentation reads the boxed cells as
+    // pictures and returns noise. Sparse-text mode finds every word wherever it is, and the
+    // layout parser rebuilds the grid from word positions anyway.
+    await worker.setParameters({ tessedit_pageseg_mode: PSM.SPARSE_TEXT });
     const { data } = await worker.recognize(canvas, {}, { blocks: true });
     signal?.throwIfAborted();
     const words: WordBox[] = [];

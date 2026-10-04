@@ -21,6 +21,7 @@ export function SettingsScreen() {
   const hydrate = useSettings((s) => s.hydrate);
   const back = useUI((s) => s.back);
   const push = useUI((s) => s.push);
+  const setTab = useUI((s) => s.setTab);
   const openSheet = useUI((s) => s.openSheet);
   const showToast = useUI((s) => s.showToast);
   const { list: subjects } = useSubjects();
@@ -39,6 +40,8 @@ export function SettingsScreen() {
     if (next) await restoreBackup(next);
     else await eraseEverything();
     await hydrate();
+    // Erasing lands on the welcome flow, which leads to Today; undoing the erase lands there too.
+    if (!next) setTab('today');
     showToast({
       message,
       action: {
@@ -97,7 +100,8 @@ export function SettingsScreen() {
               <p id="accent-label" className="mb-2 text-small font-medium text-ink-2">
                 {t('settings.accent')}
               </p>
-              <div role="radiogroup" aria-labelledby="accent-label" className="grid grid-cols-8 gap-1">
+              {/* Eight 44px targets need a 352px row; phone cards are narrower, so 2 × 4 until sm (D-037). */}
+              <div role="radiogroup" aria-labelledby="accent-label" className="grid grid-cols-4 gap-1 sm:grid-cols-8">
                 {ACCENTS.map((a) => (
                   <AccentSwatch key={a} accent={a} selected={settings.accent === a} onSelect={() => update({ accent: a })} />
                 ))}

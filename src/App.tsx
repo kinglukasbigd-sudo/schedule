@@ -1,6 +1,7 @@
-import { AnimatePresence, LazyMotion, MotionConfig, m } from 'framer-motion';
+import { AnimatePresence, LazyMotion, MotionConfig } from 'framer-motion';
 import { useEffect } from 'react';
 import { Fab } from '@/components/Fab';
+import { ScreenFrame } from '@/components/ScreenFrame';
 import { TabBar } from '@/components/TabBar';
 import { LiveRegion, ToastHost } from '@/components/Toast';
 import { SetupFlow } from '@/features/onboarding/SetupFlow';
@@ -57,7 +58,7 @@ export function App() {
       <>
         <main className={cx('pb-screen mx-auto px-4', wide ? 'max-w-wide' : 'max-w-content')}>
           <AnimatePresence mode="wait" initial={false}>
-            <m.div
+            <ScreenFrame
               key={top ? top.name : tab}
               initial={top ? { opacity: 0, x: 24 } : { opacity: 0 }}
               animate={{ opacity: 1, x: 0 }}
@@ -65,7 +66,7 @@ export function App() {
               transition={top ? spring.gentle : fade}
             >
               {top?.name === 'settings' ? <SettingsScreen /> : top?.name === 'timetable' ? <TimetableScreen /> : <Screen />}
-            </m.div>
+            </ScreenFrame>
           </AnimatePresence>
         </main>
         <AnimatePresence>{!top && <Fab key="fab" onClick={() => openSheet({ type: 'task' })} />}</AnimatePresence>

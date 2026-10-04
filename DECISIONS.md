@@ -219,3 +219,61 @@ tap counts, cross-references (F-/R-/E-/D- ids), and every wireframe's example da
 **D-036 Study sessions rank at the preferred study time.** A session is meant for the afternoon;
 treating it as due at midnight made it outrank homework due later the same morning. Missed sessions
 come back at today's study time instead of jumping the queue.
+
+---
+
+## Phase 0.5 — e2e repair on v1 (2026-10-04)
+
+`npm run e2e` failed 14 of 30 on the v1 code. Fixed against v1 behaviour; no 2.0 features started.
+
+| Test | Root cause | Kind | Fix |
+| --- | --- | --- | --- |
+| tasks · completing shows undo | Completions were announced twice: the toast (a live region) and `LiveRegion` both carried the text. | App | One announcement per message (D-042); locator scoped to the toast. |
+| tasks · next up puts overdue first | "Bio worksheet tomorrow" has no Tuesday lesson, so it is due at 23:59 — not overdue on Tuesday evening, where the test looked. | Test | Clock set to Wednesday 07:30 with `setSystemTime` (D-041). |
+| settings · theme, accent, language | German dates lacked the ordinal dot ("Montag, 5 Oktober"): one pattern for all languages. The clock was fine. | App | Per-language patterns (`5. Oktober`, `Mo., 5. Okt.`). |
+| settings · backup round-trip | `hydrate()` fell back to the in-memory settings when the table was empty, so *Erase everything* kept `onboarded: true`. | App | Fall back to fresh defaults; erase (and its undo) lands on Today. |
+| settings · rename/recolour subject | Clicked "Physical Education" while Today was still fading out; it hit Today's lesson row and opened the lesson sheet. | Test (+ app) | Wait for the Settings screen; outgoing screens ignore pointer input (D-041). |
+| onboarding · start without a timetable | The no-timetable card had no heading (DESIGN §7: sections have headings). | App | Empty-state title is the section's `h2` (Today and Week). |
+| import · screenshot | Tesseract's automatic page segmentation read the ruled cells as pictures. | App | Sparse-text segmentation (D-038). |
+| import · PDF, file without a timetable | The "one line per day" text fallback turned any OCR'd page into a timetable; locally, the OCR data CDN was also unreachable. | App + test | Files need timetable structure (D-039); language data served locally (D-040). |
+| a11y · axe light/dark | A second *Back* during the step transition hit the outgoing screen; a fixed 400 ms sleep let axe measure half-faded text. | Test (+ app) | Wait for each step; `settle()` instead of sleeps (D-041). |
+| a11y · tap targets | The FAB was measured mid scale-in. The test never visited Settings, where swatches (40 px) and segments (36 px) were too small. | Test + app | Measure after `settle()`, also on Settings; D-037. |
+
+**D-037 Accent swatches: one row only from `sm` (640 px); segments fill their track.** Supersedes
+D-018's threshold. Eight 44 px swatches need a 352 px row; on a 412 px phone (Pixel 7, the e2e device)
+the card row is 348 px, so "below 400 px" would still give 40 px targets. `sm` is an existing
+breakpoint (no new token). Fixed in v1 already because the v1 tap-target test enforces 44 px.
+Segmented controls had 36 px segments inside a 44 px track: each segment now fills the track and the
+thumb is drawn 4 px inside it — same look, 44 px targets.
+
+**D-038 OCR uses sparse-text segmentation (Tesseract PSM 11).** The default automatic mode treats
+the boxed cells of a timetable as images and returns noise ("Te ee wees" for the e2e screenshot,
+which the text fallback turned into "6 lessons, 6 subjects"). Sparse text reads every cell at
+≥ 95 % confidence; reading order doesn't matter because the layout parser rebuilds the grid from
+word positions. Rejected: stripping grid lines before OCR (more code, same result).
+
+**D-039 Only typed text may be read as "one line per day".** The text fallback guesses Monday,
+Tuesday, … for lines without day names. That is right for what a student types or pastes in the
+setup flow, but applied to a file it turned "Shopping list: milk, eggs, bread." into a Monday with
+three lessons. Files now need a grid (layout parser) or day names; otherwise the import says *We
+couldn't find a timetable* and offers *Type it in* (F-1.3).
+
+**D-040 E2E serves OCR language data from a devDependency.** v1 still fetches `eng` from jsDelivr
+at runtime (D-008 bundles it in 2.0). The import tests route that URL to `@tesseract.js-data/eng`
+in `node_modules`, with `context.route` so the request is caught when the service worker makes it.
+The tests no longer depend on a third-party CDN, and the `E2E_OFFLINE` skip is gone. Cost: a 14 MB
+dev-only package that never ships.
+
+**D-041 E2E time and motion are deterministic.** Pinned instants carry an explicit offset
+(`2026-10-05T09:10:00+02:00`): a bare ISO string is parsed in Node's zone, so on a UTC machine the
+fake clock ran two hours ahead of the browser's Europe/Skopje. Time jumps use
+`page.clock.setSystemTime` to a named instant instead of `fastForward` by a duration (the clock's
+log replays across reloads either way, but a named instant says what the test means). Tests wait
+for the destination screen before acting on it, and `settle()` (no running Web Animations, inline
+styles stable) replaces fixed sleeps before axe and size checks. App side, a screen that is
+animating out ignores pointer input (`ScreenFrame`), so a quick tap can't land on the screen that
+is leaving.
+
+**D-042 One announcement per message.** The toast container is the polite live region
+(`role="status"`) for its own text; `LiveRegion` only carries messages without a toast (reopening a
+task, import phases). Announcing both made screen readers say every completion twice.

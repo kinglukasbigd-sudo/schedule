@@ -11,7 +11,10 @@ interface SegmentedProps<T extends string> {
   className?: string;
 }
 
-/** Radio group with a sliding thumb. Arrow keys move the selection. */
+/**
+ * Radio group with a sliding thumb. Arrow keys move the selection. Each segment fills the 44px
+ * track (the tap target); the thumb is drawn 4px inside it.
+ */
 export function Segmented<T extends string>({ value, options, onChange, label, className }: SegmentedProps<T>) {
   const id = useId();
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -25,7 +28,7 @@ export function Segmented<T extends string>({ value, options, onChange, label, c
     refs.current[next]?.focus();
   };
   return (
-    <div role="radiogroup" aria-label={label} className={cx('flex rounded-md bg-surface-2 p-1', className)}>
+    <div role="radiogroup" aria-label={label} className={cx('flex rounded-md bg-surface-2', className)}>
       {options.map((opt, i) => {
         const active = opt.value === value;
         return (
@@ -42,7 +45,7 @@ export function Segmented<T extends string>({ value, options, onChange, label, c
             onClick={() => onChange(opt.value)}
             onKeyDown={(e) => onKey(e, i)}
             className={cx(
-              'relative flex min-h-9 flex-1 items-center justify-center rounded-sm px-2 text-small font-medium transition-colors duration-fast',
+              'relative flex min-h-11 flex-1 items-center justify-center rounded-md px-3 text-small font-medium transition-colors duration-fast',
               active ? 'text-ink' : 'text-ink-2 hover:text-ink',
             )}
           >
@@ -50,7 +53,7 @@ export function Segmented<T extends string>({ value, options, onChange, label, c
               <m.span
                 layoutId={`seg-${id}`}
                 transition={spring.snappy}
-                className="absolute inset-0 rounded-sm bg-surface shadow-thumb"
+                className="absolute inset-1 rounded-sm bg-surface shadow-thumb"
                 aria-hidden="true"
               />
             )}

@@ -1,5 +1,17 @@
+import { createRequire } from 'node:module';
+import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { freshApp, timetableHtml } from './helpers';
+
+// v1 fetches OCR language data from jsDelivr on first use. Serve the same files from the
+// devDependency instead, so the OCR tests are hermetic and work without that CDN. Context-level
+// routing also catches the request when the service worker proxies it.
+const tessdata = path.dirname(createRequire(import.meta.url).resolve('@tesseract.js-data/eng/package.json'));
+test.beforeEach(async ({ context }) => {
+  await context.route('https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng/**', (route) =>
+    route.fulfill({ path: path.join(tessdata, new URL(route.request().url()).pathname.split('/eng/')[1] ?? '') }),
+  );
+});
 
 async function importFile(page: Page, path: string) {
   await page.getByTestId('start').click();
@@ -30,7 +42,6 @@ test('a PDF timetable is read from its text layer', async ({ page, browser }, in
 });
 
 test('a screenshot is read with on-device OCR', async ({ page, browser }, info) => {
-  test.skip(!!process.env.E2E_OFFLINE, 'OCR language data downloads from the CDN on first use');
   test.slow();
   const render = await browser.newPage({ viewport: { width: 1100, height: 520 } });
   await render.setContent(timetableHtml());

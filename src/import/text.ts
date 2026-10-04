@@ -9,15 +9,19 @@ import { extractTimes, finalizeDraft, splitRoom } from './normalize';
  *   Mon\n1. Math\n2. English              (day header followed by lines)
  *   \tMon\tTue …\n08:00\tMath\tBio …      (spreadsheet paste, days across)
  *   Mon\tMath\tBio …                      (spreadsheet paste, days down)
+ *
+ * Lines without any day name are read as Monday, Tuesday, … only when `unlabelled` is on: fine
+ * for text the student typed as their week, but for text read out of a file it would turn any
+ * document ("Shopping list: milk, eggs, bread") into a timetable.
  */
-export function parseTimetableText(input: string): DraftTimetable | null {
+export function parseTimetableText(input: string, { unlabelled = true }: { unlabelled?: boolean } = {}): DraftTimetable | null {
   const lines = input
     .replace(/\r/g, '')
     .split('\n')
     .map((l) => l.replace(/\s+$/, ''))
     .filter((l) => l.trim().length > 0);
   if (lines.length === 0) return null;
-  return parseSpreadsheet(lines) ?? parseDayLines(lines) ?? parseUnlabelled(lines);
+  return parseSpreadsheet(lines) ?? parseDayLines(lines) ?? (unlabelled ? parseUnlabelled(lines) : null);
 }
 
 /** One school day typed as a list: "Math, English, -, Bio" → entries by period (empty = free). */

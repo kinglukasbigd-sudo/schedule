@@ -74,9 +74,10 @@ export function WeekScreen() {
       />
       {!tt ? (
         tt === null && (
-          <div className="rounded-lg bg-surface shadow-card">
+          <section aria-labelledby="week-no-timetable" className="rounded-lg bg-surface shadow-card">
             <EmptyState
               icon="grid"
+              heading={{ level: 'h2', id: 'week-no-timetable' }}
               title={t('today.noTimetable')}
               body={t('today.noTimetableBody')}
               action={
@@ -85,7 +86,7 @@ export function WeekScreen() {
                 </Button>
               }
             />
-          </div>
+          </section>
         )
       ) : (
         <>

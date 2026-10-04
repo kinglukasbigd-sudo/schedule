@@ -5,7 +5,10 @@ import { spring } from '@/lib/motion';
 
 const DURATION = 5000;
 
-/** One toast at a time, above the tab bar, with an optional undo action. */
+/**
+ * One toast at a time, above the tab bar, with an optional undo action. The container is the live
+ * region that announces it — don't also send the same text to <LiveRegion>.
+ */
 export function ToastHost() {
   const toast = useUI((s) => s.toast);
   const dismiss = useUI((s) => s.dismissToast);
@@ -17,7 +20,12 @@ export function ToastHost() {
   }, [toast, dismiss]);
 
   return (
-    <div className="bottom-above-bar pointer-events-none fixed inset-x-0 z-toast flex justify-center px-4" aria-live="polite">
+    <div
+      className="bottom-above-bar pointer-events-none fixed inset-x-0 z-toast flex justify-center px-4"
+      role="status"
+      aria-live="polite"
+      data-testid="toast"
+    >
       <AnimatePresence>
         {toast && (
           <m.div
@@ -48,7 +56,7 @@ export function ToastHost() {
   );
 }
 
-/** Visually hidden polite live region for status announcements. */
+/** Visually hidden polite live region for announcements that have no toast of their own. */
 export function LiveRegion() {
   const message = useUI((s) => s.announcement);
   return (

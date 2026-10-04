@@ -143,9 +143,10 @@ function NextUpCard({ task, then, tt, now, subjects }: NextUpProps) {
 function NoTimetable({ onAdd }: { onAdd: () => void }) {
   const { t } = useTranslation();
   return (
-    <section className="rounded-lg bg-surface shadow-card">
+    <section aria-labelledby="no-timetable" className="rounded-lg bg-surface shadow-card">
       <EmptyState
         icon="grid"
+        heading={{ level: 'h2', id: 'no-timetable' }}
         title={t('today.noTimetable')}
         body={t('today.noTimetableBody')}
         action={
