@@ -3,6 +3,7 @@ import { db } from '@/db/db';
 import { demoData } from '@/logic/demo';
 import { k, subject, task, timetable } from '@/test/builders';
 import * as actions from './actions';
+import { planStudy } from './plan';
 import { onDataError, useData } from './data';
 import { useSettings } from './settings';
 
@@ -65,6 +66,26 @@ describe('data store', () => {
   });
 });
 
+describe('data store, adversarially', () => {
+  it('still starts when the database can’t be opened (private mode, storage blocked)', async () => {
+    const errors: unknown[] = [];
+    const stop = onDataError((e) => errors.push(e));
+    vi.spyOn(db.subjects, 'toArray').mockRejectedValueOnce(new DOMException('blocked', 'InvalidStateError'));
+    useData.setState({ ready: false });
+    await expect(store().load()).resolves.toBeUndefined();
+    expect(store().ready).toBe(true);
+    expect(store().subjects).toEqual([]);
+    expect(errors).toHaveLength(1);
+    stop();
+  });
+
+  it('settles after many writes without piling up results', async () => {
+    for (let i = 0; i < 200; i++) void store().apply({ subjects: { put: [subject(`s${i}`, `S ${i}`)] } });
+    await expect(store().settled()).resolves.toBeUndefined();
+    expect(await db.subjects.count()).toBe(200);
+  });
+});
+
 describe('actions', () => {
   it('ensureSubject reuses names and assigns the next free preset', () => {
     const art = actions.ensureSubject('Art');
@@ -72,6 +93,7 @@ describe('actions', () => {
     expect(actions.ensureSubject(' art ')).toBe(art);
     expect(actions.ensureSubject('Biology').hue).toBe(35);
     expect(actions.ensureSubject('Neutral', null).hue).toBeNull();
+    expect(() => actions.ensureSubject('   ')).toThrow(RangeError);
   });
 
   it('updateSubject refuses empty and duplicate names, and unknown ids', () => {
@@ -80,6 +102,8 @@ describe('actions', () => {
     expect(actions.updateSubject(art.id, { name: ' ' })).toBeNull();
     expect(actions.updateSubject(art.id, { name: 'MUSIC' })).toBeNull();
     expect(actions.updateSubject('nobody', { hue: 3 })).toBeNull();
+    expect(actions.updateSubject(art.id, { hue: 360 })).toBeNull();
+    expect(actions.updateSubject(art.id, { hue: 12.5 })).toBeNull();
     expect(actions.updateSubject(art.id, { teacher: 'Ms. K', name: 'Fine art ' })).not.toBeNull();
     expect(store().subjects.find((s) => s.id === art.id)).toMatchObject({ name: 'Fine art', teacher: 'Ms. K' });
   });
@@ -122,14 +146,14 @@ describe('actions', () => {
     const now = new Date(2026, 9, 5, 15, 0);
     const slots = { now, study: { maxMinutesPerDay: 90, sessionMinutes: 25 as const, weekends: true } };
     actions.saveTask(task({ id: 'hw', due: '2026-10-07' }));
-    expect(actions.planStudy('hw', slots)).toBeNull();
-    expect(actions.planStudy('ghost', slots)).toBeNull();
+    expect(planStudy('hw', slots)).toBeNull();
+    expect(planStudy('ghost', slots)).toBeNull();
     actions.saveTask(task({ id: 'test', kind: 'test', due: '2026-10-23', topics: ['Mitosis'] } as never));
-    actions.planStudy('test', slots);
+    planStudy('test', slots);
     const planned = store().tasks.find((t) => t.id === 'test');
     expect(planned?.subtasks).toHaveLength(5);
     expect((planned as { plan: unknown }).plan).toMatchObject({ sessions: 5 });
-    actions.planStudy('test', { ...slots, now: new Date(2026, 9, 14, 16, 0) });
+    planStudy('test', { ...slots, now: new Date(2026, 9, 14, 16, 0) });
     const again = store().tasks.find((t) => t.id === 'test');
     expect(again?.subtasks.every((s) => (s.plannedFor as string) >= '2026-10-14')).toBe(true);
   });

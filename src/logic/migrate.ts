@@ -54,6 +54,10 @@ export interface V1Data {
 
 const oneOf = <T extends string>(list: readonly T[], v: unknown, fallback: T): T =>
   typeof v === 'string' && (list as readonly string[]).includes(v) ? (v as T) : fallback;
+/** v1 rows come straight from IndexedDB, unvalidated: read every field defensively. */
+const text = (v: unknown): string => (typeof v === 'string' ? v : v == null ? '' : String(v));
+const millis = (v: unknown, fallback: number): number => (typeof v === 'number' && Number.isFinite(v) ? v : fallback);
+const dayOf = (ms: number): DateKey => toDateKey(new Date(ms));
 
 export function migrateSettings(v1: Partial<V1Settings> | null | undefined): Settings {
   return {
@@ -70,31 +74,27 @@ export function migrateSettings(v1: Partial<V1Settings> | null | undefined): Set
  * is repaired rather than dropped where possible: duplicate subject names merge, lessons on
  * missing periods or subjects go, an impossible due date falls back to the day it was created.
  */
-export function migrateV1toV2(v1: V1Data, options: { newId?: () => ID } = {}): Omit<AppData, 'attachments'> {
+export function migrateV1toV2(v1: V1Data, options: { newId?: () => ID; now?: number } = {}): Omit<AppData, 'attachments'> {
   const newId = options.newId ?? uid;
+  const now = options.now ?? Date.now();
 
   // Subjects: colour name → hue; names stay unique by fold().
   const subjects: Subject[] = [];
   const subjectAlias = new Map<string, ID>();
-  for (const s of [...v1.subjects].sort((a, b) => a.createdAt - b.createdAt)) {
-    const same = subjects.find((x) => fold(x.name.trim()) === fold(s.name.trim()));
+  for (const s of [...v1.subjects].sort((a, b) => millis(a.createdAt, 0) - millis(b.createdAt, 0))) {
+    const name = text(s.name).trim().slice(0, 40) || 'Subject';
+    const same = subjects.find((x) => fold(x.name) === fold(name));
     if (same) {
       subjectAlias.set(s.id, same.id);
       continue;
     }
-    subjects.push({
-      id: s.id,
-      name: s.name.trim().slice(0, 40) || 'Subject',
-      short: null,
-      hue: hueOfPreset(s.color),
-      teacher: null,
-      createdAt: s.createdAt,
-      updatedAt: s.createdAt,
-    });
+    const createdAt = millis(s.createdAt, 0);
+    subjects.push({ id: s.id, name, short: null, hue: hueOfPreset(text(s.color)), teacher: null, createdAt, updatedAt: createdAt });
     subjectAlias.set(s.id, s.id);
   }
 
-  const tasksDue = v1.tasks.map((t) => (isDateKey(t.due) ? t.due : toDateKey(new Date(t.createdAt))));
+  // An impossible due date falls back to the day the task was created, then to today.
+  const tasksDue = v1.tasks.map((t) => (isDateKey(t.due) ? t.due : dayOf(millis(t.createdAt, now))));
 
   // Timetable: "main" becomes a dated, open-ended timetable with period ids.
   const timetables: Timetable[] = [];
@@ -102,14 +102,15 @@ export function migrateV1toV2(v1: V1Data, options: { newId?: () => ID } = {}): O
   let periodStarts: string[] = [];
   const tt = v1.timetable;
   if (tt) {
-    const updated = toDateKey(new Date(tt.updatedAt));
+    const updatedAt = millis(tt.updatedAt, now);
+    const updated = dayOf(updatedAt);
     const earliestDue = tasksDue.reduce<DateKey | null>((min, d) => (!min || d < min ? d : min), null);
     const validFrom = earliestDue && earliestDue < mondayOf(updated) ? earliestDue : mondayOf(updated);
-    const periods = normalizePeriods(tt.bells, newId);
+    const periods = normalizePeriods((Array.isArray(tt.bells) ? tt.bells : []).map((b) => ({ start: text(b?.start), end: text(b?.end) })), newId);
     periodStarts = periods.map((p) => p.start);
-    const days = [...new Set(tt.days.filter((d): d is Weekday => Number.isInteger(d) && d >= 1 && d <= 7))].sort();
+    const days = [...new Set((Array.isArray(tt.days) ? tt.days : []).filter((d): d is Weekday => Number.isInteger(d) && d >= 1 && d <= 7))].sort();
     const lessons: Lesson[] = [];
-    for (const l of tt.lessons) {
+    for (const l of Array.isArray(tt.lessons) ? tt.lessons : []) {
       const period = periods[l.period];
       const subjectId = subjectAlias.get(l.subjectId);
       const key = `${l.day}:${l.period}`;
@@ -122,7 +123,7 @@ export function migrateV1toV2(v1: V1Data, options: { newId?: () => ID } = {}): O
         periodId: period.id,
         span: 1,
         time: null,
-        room: l.room?.trim() ? l.room.trim() : null,
+        room: text(l.room).trim() || null,
       };
       lessons.push(lesson);
       lessonAt.set(key, lesson);
@@ -136,8 +137,8 @@ export function migrateV1toV2(v1: V1Data, options: { newId?: () => ID } = {}): O
       periods,
       rotation: { weeks: 1, anchor: mondayOf(validFrom), anchorIndex: 0, skipHolidayWeeks: false },
       lessons,
-      createdAt: tt.updatedAt,
-      updatedAt: tt.updatedAt,
+      createdAt: updatedAt,
+      updatedAt,
     });
   }
 
@@ -146,19 +147,20 @@ export function migrateV1toV2(v1: V1Data, options: { newId?: () => ID } = {}): O
     const lesson = t.period != null ? lessonAt.get(`${weekdayOf(date)}:${t.period}`) : undefined;
     const start = t.period != null ? periodStarts[t.period] : undefined;
     const kind: TaskKind = oneOf(TASK_KINDS, t.kind, 'homework');
+    const createdAt = millis(t.createdAt, now);
     const base = {
       id: t.id,
-      title: t.title ?? '',
+      title: text(t.title),
       subjectId: t.subjectId ? (subjectAlias.get(t.subjectId) ?? null) : null,
       due: { date, lessonId: lesson?.id ?? null, time: start && isHHmm(start) ? start : null },
-      notes: t.notes ?? '',
+      notes: text(t.notes),
       subtasks: [],
       attachmentIds: [],
       reminders: null,
       estimateMin: null,
-      doneAt: t.doneAt ?? null,
-      createdAt: t.createdAt,
-      updatedAt: t.updatedAt,
+      doneAt: typeof t.doneAt === 'number' && Number.isFinite(t.doneAt) ? t.doneAt : null,
+      createdAt,
+      updatedAt: millis(t.updatedAt, createdAt),
     };
     if (kind === 'test') return { ...base, kind, topics: [], plan: null, result: null };
     if (kind === 'assignment') return { ...base, kind, plan: null };

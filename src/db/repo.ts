@@ -48,19 +48,23 @@ export async function saveSettings(settings: Settings): Promise<void> {
 // ── Subjects ────────────────────────────────────────────────────────────────
 
 export async function createSubject(name: string, color?: SubjectColor): Promise<SubjectView> {
-  return subjectView(actions.ensureSubject(name, color !== undefined ? hueOfColor(color) : undefined));
+  const subject = actions.ensureSubject(name, color !== undefined ? hueOfColor(color) : undefined);
+  await data().settled();
+  return subjectView(subject);
 }
 
 export async function updateSubject(id: string, patch: Partial<Pick<SubjectView, 'name' | 'color'>>): Promise<void> {
-  actions.updateSubject(id, {
+  await actions.updateSubject(id, {
     ...(patch.name != null ? { name: patch.name } : {}),
     ...(patch.color != null ? { hue: hueOfColor(patch.color) } : {}),
-  });
+  })?.done;
 }
 
 /** Delete a subject, clearing its lessons and unlinking its tasks. Returns what is needed to undo. */
 export async function deleteSubject(id: string): Promise<SubjectSnapshot | null> {
-  return actions.deleteSubject(id);
+  const applied = actions.deleteSubject(id);
+  await applied?.done;
+  return applied;
 }
 
 export async function restoreSubject(snapshot: SubjectSnapshot): Promise<void> {
@@ -107,21 +111,23 @@ export function toDraft(tt: TimetableView, subjects: Map<string, SubjectView>): 
 
 export async function addTask(input: TaskInput): Promise<TaskView> {
   const task = taskFromInput(input, schedule(), Date.now());
-  actions.saveTask(task);
+  await actions.saveTask(task).done;
   return taskView(task, data().timetables);
 }
 
 export async function updateTask(id: string, patch: Partial<TaskInput>): Promise<void> {
   const task = data().tasks.find((t) => t.id === id);
-  if (task) actions.saveTask(updatedTask(task, patch, schedule(), Date.now()));
+  if (task) await actions.saveTask(updatedTask(task, patch, schedule(), Date.now())).done;
 }
 
 export async function setTaskDone(id: string, done: boolean): Promise<void> {
-  actions.setTaskDone(id, done);
+  await actions.setTaskDone(id, done)?.done;
 }
 
 export async function deleteTask(id: string): Promise<TaskSnapshot | null> {
-  return actions.deleteTask(id);
+  const applied = await actions.deleteTask(id);
+  await applied?.done;
+  return applied;
 }
 
 export async function restoreTask(snapshot: TaskSnapshot): Promise<void> {

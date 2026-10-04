@@ -240,6 +240,26 @@ export function checkInvariants(data: Pick<AppData, 'subjects' | 'timetables' | 
   const problems: string[] = [];
   const subjectIds = new Set(data.subjects.map((s) => s.id));
 
+  // Ids are keys: a duplicate would silently overwrite a row on import.
+  const unique = (table: string, ids: string[]) => {
+    const seen = new Set<string>();
+    for (const id of ids) {
+      if (seen.has(id)) problems.push(`${table}: id ${id} is used twice`);
+      seen.add(id);
+    }
+  };
+  unique('subjects', data.subjects.map((s) => s.id));
+  unique('timetables', data.timetables.map((t) => t.id));
+  unique('holidays', data.holidays.map((h) => h.id));
+  unique('tasks', data.tasks.map((t) => t.id));
+  unique('attachments', data.attachments.map((a) => a.id));
+  unique('lessons', data.timetables.flatMap((t) => t.lessons.map((l) => l.id)));
+  for (const t of data.timetables) unique(`timetable ${t.id} periods`, t.periods.map((p) => p.id));
+  for (const s of data.subjects) {
+    if (!s.name.trim()) problems.push(`subject ${s.id}: blank name`);
+    if (s.hue != null && (!Number.isInteger(s.hue) || s.hue < 0 || s.hue > 359)) problems.push(`subject ${s.id}: hue ${s.hue}`);
+  }
+
   // 1. Timetable ranges don't overlap; validTo ≥ validFrom.
   const sorted = [...data.timetables].sort((a, b) => a.validFrom.localeCompare(b.validFrom));
   sorted.forEach((t, i) => {

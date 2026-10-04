@@ -267,6 +267,6 @@ export interface AppData {
 
 /** The part of AppData that decides when lessons happen. */
 export interface Schedule {
-  timetables: Timetable[];
-  holidays: Holiday[];
+  readonly timetables: readonly Timetable[];
+  readonly holidays: readonly Holiday[];
 }

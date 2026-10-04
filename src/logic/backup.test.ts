@@ -110,3 +110,16 @@ describe('backups (F-12)', () => {
     expect(back.attachments).toEqual([]);
   });
 });
+
+describe('backups of everything the model can hold', () => {
+  it('round-trips plans, results, planned steps, reminder overrides and holidays', async () => {
+    const { demoData } = await import('./demo');
+    const demo = demoData(new Date(2026, 9, 8, 9, 50));
+    const withReminders = demo.tasks.map((t, i) => (i === 0 ? { ...t, reminders: [{ daysBefore: 1, at: '18:00' as never }], estimateMin: 20 } : t));
+    const full: BackupData = { ...demo, tasks: withReminders, attachments: [] };
+    const { data: back } = roundTrip(createBackup(full, now));
+    expect(back).toEqual(full);
+    expect(back.tasks.some((t) => t.kind === 'test' && t.result != null)).toBe(true);
+    expect(back.tasks.some((t) => t.subtasks.some((s) => s.origin === 'plan'))).toBe(true);
+  });
+});

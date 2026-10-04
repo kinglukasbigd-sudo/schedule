@@ -277,3 +277,96 @@ is leaving.
 **D-042 One announcement per message.** The toast container is the polite live region
 (`role="status"`) for its own text; `LiveRegion` only carries messages without a toast (reopening a
 task, import phases). Announcing both made screen readers say every completion twice.
+
+---
+
+## Phase 2 — data layer and pure logic (2026-10-04)
+
+Numbering continues after Phase 0.5. Phase 1 was built in another worktree and isn't on this branch
+yet; its planned entries (also starting at D-037) need new numbers when it is merged.
+
+**D-043 Quick add reads a little more than R-12, and never guesses a past or ambiguous moment.**
+Month names ("12 nov", "12. November", "12 ноември") are unambiguous, so they may point up to a year
+ahead; numeric day-months keep the 120-day guard (E-24). Lowercase "may" and "march" are verbs too
+("question 5 may be hard"): as months they need "of", the end of the text, or a year or date word
+after them. Capitalised short words ("SAT") aren't weekdays; German two-letter days ("Fr") count only
+in German and capitalised. "friday next week" is that Friday. Bare hours 1–6 mean the afternoon
+("at 3" → 15:00), and "2h" is a duration (a glued "10h" is a time only from 07). A time alone is today
+if still ahead, else tomorrow. A typed date attaches to the subject's lesson that day only if it hasn't
+started — "math homework today" at 15:00 is not instantly overdue. The night-owl rule moves *tomorrow*,
+*day after tomorrow*, weekdays and *next week*; not *today*, *in N days* or explicit dates. The time
+phrase is stripped from the title along with the date phrase. Rejected: fuzzy matching, and locale-only
+grammars (students mix languages).
+
+**D-044 Pure logic and the v2 model live in `src/logic`.** Framework-free, no hidden clock or store:
+every function takes `now` and the `Schedule` it needs, so it is deterministic and unit-testable. The
+v2 types are in `src/logic/types.ts` rather than SPEC §3's `src/domain/types.ts`, because `src/domain`
+still holds the v1 screens' shapes (D-045); when the last v1 screen goes, `src/domain` goes with it.
+Signatures from the brief, made explicit: `nextOccurrenceOfLesson(lesson, from, schedule)`,
+`resolveWeekType(date, timetable, holidays)`, `nextLessonOfSubject(subjectId, from, timetables,
+holidays)`, `parseQuickAdd(text, subjects, now, locale)` plus `resolveQuickAddDue(parsed, now,
+schedule)` (parsing needs no timetable; placing does), `workloadScore(week, tasks, options)` and
+`generateStudyPlan(test, freeSlots, tasks)`, where free slots are the window, the student's limits and
+choices, and the load comes from the other tasks.
+
+**D-045 The v1 screens keep working through a view layer until each is rebuilt.** Stored data is v2
+from now on; `db/legacy.ts` (pure, tested), `db/hooks.ts` and `db/repo.ts` give the v1 screens their
+old shapes with the same function names, so Phase 1's screen edits still merge cleanly and the e2e
+suite proves nothing regressed. Limits while it lasts: the screens see one timetable (the one covering
+today, else the next, else the latest), today's rotation week, and no holidays; edits keep period ids by
+position and lesson ids by slot while the subject is unchanged (R-4), so linked tasks survive them.
+Rejected: porting every screen to v2 now (that is the screens' phase, and it would collide with Phase
+1), and a second database for v2 (two sources of truth).
+
+**D-046 The data store applies change sets optimistically and reloads on failure.** Every write is
+`{ table: { put, delete } }`, applied to memory first and persisted in one Dexie transaction (several
+tables land together or not at all). Undo is the inverse change, computed before applying. A failed
+write reloads the affected tables from the database — the source of truth — instead of replaying an
+inverse that might race other writes, then raises `onDataError` (snackbar, E-19). Callers that need
+durability await the write (`Applied.done`); the v1 facade does, so a confirmation toast means "stored".
+If the database can't be opened at all (blocked storage), the app starts empty and says so rather than
+showing a blank screen. Single writer per tab: no cross-tab live sync (Dexie `liveQuery` dropped with
+`dexie-react-hooks`); attachments stay in IndexedDB, not in memory; settings keep their own store.
+
+**D-047 One migration, shared, defensive, tested in a real browser.** `migrateV1toV2` is pure and used
+by both the Dexie upgrade (schema version 2) and v1 backup import, so they can't drift. It repairs
+instead of dropping — duplicate subject names merge, broken bell times are rebuilt from neighbours, an
+impossible due date falls back to the creation day — and reads raw v1 rows defensively, because one
+corrupt row would otherwise abort the upgrade on every launch. `validFrom` is the earlier of the Monday
+of the last timetable update and the earliest due date (SPEC §9.2). Tested on fixtures in unit tests and,
+end to end, on a v1 IndexedDB database built exactly as v1 did, which the app upgrades on first launch.
+
+**D-048 Calendar export keeps UIDs stable and always writes a rule.** Lesson series are split where a
+skipped holiday week shifts the rotation (D-023). Series boundaries are worked out over the timetable's
+whole life, not the export window, so UIDs (`<lesson>@term`, then `<lesson>-<yyyymmdd>@term` for a
+restart) stay the same next week and calendars update instead of duplicating. Every lesson event has an
+RRULE, even with one occurrence, so the rotation interval survives a re-import; import recognises
+TERM's own restarted series as one lesson. A test or assignment with a time but no lesson lasts 45
+minutes. Export is checked against ical.js (Mozilla's RFC 5545 implementation, dev only): every expanded
+occurrence equals the app's own.
+
+**D-049 Rotation results are memoised per Monday.** Counting skipped holiday weeks back to the anchor for
+every date made a missed next-lesson search 51 ms (≈ 200 ms on a throttled phone, per keystroke in quick
+add) and an export 1.8 s. Timetables and holiday lists are immutable values in the store, so their
+identity keys a WeakMap cache: now 4 ms and 0.18 s. Callers pass the store's arrays, never copies.
+
+**D-050 Workload and study-plan details.** Written tests count no load. Planned steps' minutes — done or
+not — reduce the remainder that is spread like an unplanned task; whole minutes, the leftover on the days
+nearest the due date. A plan window of one day or less (due today or tomorrow) is one *Quick review*
+today (E-40). A neighbour tie goes to the day nearer the due date. *Re-plan* regenerates the stored
+session count minus finished sessions, and nothing once all are done. Session titles are a structured
+value the caller words (English by default), so plans can be stored in the student's language.
+
+**D-051 Tests pin the zone and the coverage.** Unit tests run in Europe/Skopje (`test.env.TZ`), so results
+don't depend on the machine; DST tests switch zones per file (Vitest's `forks` pool runs files in
+separate processes). `npm run test:coverage` fails below 90 % of statements, branches, functions or
+lines in `src/logic`, and `npm run check` runs it.
+
+**D-052 Rarely used code loads on use.** Phase 2 pushed the initial chunk from 144.8 to 153.4 KB gzip,
+over N-1's 150. Backup parsing and validation now load when the student exports or imports, and the
+study planner when they plan: 149.3 KB. The margin is thin; the screens' phase should split further.
+
+**D-053 Demo data is DESIGN's scenario, moved to this week.** `demoData(now)` builds the example week
+(Thursday 8 October 2026, Week A, teacher training on Monday, autumn break 26–30 October) shifted by
+whole weeks, with a study plan generated the way the app makes one. In development, `await
+term.seedDemo()` in the console loads it.

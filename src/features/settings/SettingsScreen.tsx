@@ -5,7 +5,7 @@ import { IconButton } from '@/components/Button';
 import { Icon, type IconName } from '@/components/Icon';
 import { ScreenHeader, SectionLabel } from '@/components/ScreenHeader';
 import { Segmented } from '@/components/Segmented';
-import { eraseEverything, exportBackup, parseBackup, restoreBackup, type Backup } from '@/db/backup';
+import type { Backup } from '@/db/backup';
 import { useSubjects } from '@/db/hooks';
 import { ACCENTS, LANGUAGES, THEMES, type Accent } from '@/domain/types';
 import { LANGUAGE_NAMES } from '@/i18n';
@@ -36,6 +36,8 @@ export function SettingsScreen() {
 
   /** Replace all data, keeping a snapshot so the change can be undone. */
   const replaceAll = async (next: Backup | null, message: string) => {
+    // Backup code loads when it's used, not with the app (N-1).
+    const { eraseEverything, exportBackup, restoreBackup } = await import('@/db/backup');
     const snapshot = await exportBackup();
     if (next) await restoreBackup(next);
     else await eraseEverything();
@@ -52,6 +54,7 @@ export function SettingsScreen() {
   };
 
   const onExport = async () => {
+    const { exportBackup } = await import('@/db/backup');
     const backup = await exportBackup();
     const name = `term-backup-${backup.exportedAt.slice(0, 10)}.json`;
     const file = new File([JSON.stringify(backup, null, 2)], name, { type: 'application/json' });
@@ -74,6 +77,7 @@ export function SettingsScreen() {
 
   const onImport = async (file: File) => {
     try {
+      const { parseBackup } = await import('@/db/backup');
       const backup = parseBackup(JSON.parse(await file.text()));
       await replaceAll(backup, t('settings.imported'));
     } catch {

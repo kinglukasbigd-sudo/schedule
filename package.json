@@ -25,7 +25,6 @@
     "@capacitor/haptics": "^8.0.2",
     "date-fns": "^4.4.0",
     "dexie": "^4.4.6",
-    "dexie-react-hooks": "^4.4.0",
     "framer-motion": "^14.0.0",
     "i18next": "^26.4.2",
     "pdfjs-dist": "^6.4.299",

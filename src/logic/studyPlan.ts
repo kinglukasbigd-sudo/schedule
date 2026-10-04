@@ -144,7 +144,9 @@ export function replan<T extends Test | Assignment>(task: T, slots: FreeSlots, t
   const kept = task.subtasks.filter((s) => s.origin !== 'plan' || s.done);
   const finished = task.subtasks.filter((s) => s.origin === 'plan' && s.done).length;
   const stored = task.plan;
-  const sessions = stored ? Math.max(1, stored.sessions - finished) : undefined;
+  // Every planned session done: nothing to re-plan.
+  if (stored && finished >= stored.sessions) return { ...task, subtasks: kept };
+  const sessions = stored ? stored.sessions - finished : undefined;
   const { subtasks, plan } = generateStudyPlan(
     { ...task, subtasks: kept },
     {

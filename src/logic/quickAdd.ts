@@ -118,6 +118,7 @@ const numberNames: [number, string[]][] = [
 ];
 for (const [n, names] of numberNames) for (const w of names) NUMBER_WORDS[fold(w)] = n;
 
+const AMBIGUOUS_MONTHS = new Set(['may', 'march']);
 /** Between a day number and its month: "12th of November", "12-ти ноември". */
 const LINK_WORDS = new Set(f(['of', 'ти', 'ви', 'ри', 'ми']));
 const DAY_UNITS = new Set(f(['day', 'days', 'ден', 'дена', 'дни', 'tag', 'tage', 'tagen']));
@@ -216,10 +217,40 @@ function futureDate(ctx: DateContext, day: number, month: number, year: number |
   return null;
 }
 
-function findDates(text: string, toks: Token[], ctx: DateContext): Match<{ date: DateKey; source: DateSource }>[] {
-  const out: Match<{ date: DateKey; source: DateSource }>[] = [];
-  const add = (from: Token, to: Token, date: DateKey | null, source: DateSource) => {
-    if (date) out.push({ start: from.start, end: to.end, value: { date, source } });
+type DateMatch = Match<{ date: DateKey; source: DateSource; weekday?: number }>;
+
+/** A date phrase takes a dot right after it along: "Fr.", "12. Nov.", "… friday." */
+function withDot(text: string, end: number): number {
+  return text[end] === '.' && (end + 1 >= text.length || /\s/.test(text[end + 1] as string)) ? end + 1 : end;
+}
+
+/** "friday next week", "next week friday", "во петок следната недела" → that Friday. */
+function mergeNextWeek(text: string, matches: DateMatch[]): DateMatch[] {
+  const nextWeek = matches.find((m) => m.value.source === 'next-week');
+  if (!nextWeek) return matches;
+  const gap = (a: DateMatch, b: DateMatch) => text.slice(Math.min(a.end, b.end), Math.max(a.start, b.start));
+  const day = matches.find(
+    (m) =>
+      m.value.weekday != null &&
+      (m.end <= nextWeek.start || m.start >= nextWeek.end) &&
+      gap(m, nextWeek)
+        .split(/[^\p{L}]+/u)
+        .filter(Boolean)
+        .every((w) => DATE_PREPS.has(fold(w))),
+  );
+  if (!day?.value.weekday) return matches;
+  const merged: DateMatch = {
+    start: Math.min(day.start, nextWeek.start),
+    end: Math.max(day.end, nextWeek.end),
+    value: { date: addDays(nextWeek.value.date, day.value.weekday - 1), source: 'weekday' },
+  };
+  return [merged, ...matches.filter((m) => m !== day && m !== nextWeek)];
+}
+
+function findDates(text: string, toks: Token[], ctx: DateContext): DateMatch[] {
+  const out: DateMatch[] = [];
+  const add = (from: Token, to: Token, date: DateKey | null, source: DateSource, weekday?: number) => {
+    if (date) out.push({ start: from.start, end: withDot(text, to.end), value: { date, source, ...(weekday ? { weekday } : {}) } });
   };
 
   toks.forEach((tok, i) => {
@@ -243,7 +274,7 @@ function findDates(text: string, toks: Token[], ctx: DateContext): Match<{ date:
       (ctx.locale === 'de' && /^\p{Lu}\p{Ll}$/u.test(tok.raw) ? GERMAN_SHORT_WEEKDAYS[tok.word] : undefined);
     const partOfNextWeek = WEEK_WORDS.has(tok.word) && prev && NEXT_WORDS.has(prev.word);
     if (weekday && !partOfNextWeek && !(tok.raw.length <= 4 && isAcronym(tok.raw))) {
-      add(tok, tok, nextWeekday(ctx.ref, weekday), 'weekday');
+      add(tok, tok, nextWeekday(ctx.ref, weekday), 'weekday', weekday);
     }
 
     // "in 3 days" / "за 3 дена" / "in drei Tagen"
@@ -254,7 +285,16 @@ function findDates(text: string, toks: Token[], ctx: DateContext): Match<{ date:
 
     // "12 nov", "12th of November", "12. Oktober 2026", "Nov 12"
     const month = MONTHS[tok.word];
-    if (month) {
+    // "may" and "march" are also verbs ("5 may be hard"): lowercase, they count as months only with
+    // "of", at the end, or before a year or a date/time word ("essay 1 may", "1 may at 10").
+    const verbLike =
+      AMBIGUOUS_MONTHS.has(tok.word) &&
+      !/^\p{Lu}/u.test(tok.raw) &&
+      prev?.word !== 'of' &&
+      next != null &&
+      !/^\d{4}$/.test(next.word) &&
+      !DATE_PREPS.has(next.word);
+    if (month && !verbLike) {
       // "12 nov", "12th of November", "12-ти ноември"
       const before = dayNumber(prev) != null ? prev : prev && LINK_WORDS.has(prev.word) ? toks[i - 2] : undefined;
       const beforeDay = dayNumber(before);
@@ -276,7 +316,7 @@ function findDates(text: string, toks: Token[], ctx: DateContext): Match<{ date:
     const date = futureDate(ctx, Number(d), Number(mo), y ? Number(y) : null, NUMERIC_DATE_DAYS);
     if (date) out.push({ start: m.index, end: m.index + whole.length, value: { date, source: 'numeric' } });
   }
-  return out;
+  return mergeNextWeek(text, out);
 }
 
 // ── Times ────────────────────────────────────────────────────────────────────
@@ -400,7 +440,7 @@ export function parseQuickAdd(text: string, subjects: readonly Subject[], now: D
   return {
     kind: findKind(toks),
     subjectId: findSubject(toks, subjects, used),
-    when: date?.value ?? null,
+    when: date ? { date: date.value.date, source: date.value.source } : null,
     time: time?.value ?? null,
     title: stripSpans(text, [date, time].filter((m): m is Match<never> => m != null)),
   };
@@ -428,7 +468,12 @@ export function resolveQuickAddDue(parsed: Pick<QuickAdd, 'subjectId' | 'when' |
     }
     return { due: { date: when.date, lessonId: null, time }, source: 'typed' };
   }
-  if (when) return { due: dueOn(when.date, subjectId, schedule, time), source: 'typed' };
+  if (when) {
+    if (time || !subjectId) return { due: dueOn(when.date, subjectId, schedule, time), source: 'typed' };
+    // The subject's lesson that day — one still ahead: a lesson that already started is no due time.
+    const occ = occurrencesOn(when.date, schedule, (l) => l.subjectId === subjectId).find((o) => o.start > now);
+    return { due: occ ? dueAtLesson(occ) : { date: when.date, lessonId: null, time: null }, source: 'typed' };
+  }
   if (time) {
     // A time alone: today if it's still ahead, otherwise tomorrow.
     const date = minutesOf(time) > minutesOf(timeOf(now)) ? today : addDays(today, 1);

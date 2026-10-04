@@ -107,7 +107,7 @@ function lessonEvents(t: Timetable, lesson: Lesson, from: DateKey, until: DateKe
   const occs: Occurrence[] = [];
   for (const date of dateRange(t.validFrom, end)) {
     if (weekdayOf(date) !== lesson.day) continue;
-    const occ = occurrencesOn(date, own).find((o) => o.lesson.id === lesson.id);
+    const occ = occurrencesOn(date, own, (l) => l.id === lesson.id)[0];
     if (occ) occs.push(occ);
   }
   const subject = subjects.get(lesson.subjectId);
@@ -287,6 +287,13 @@ function parseMoment(prop: Property | undefined): Moment | null {
   return minutes < 24 * 60 ? { date, time: toHHmm(minutes) } : null;
 }
 
+/** RFC 5545 DURATION ("PT1H30M", "P5D", "P1W") in minutes, or null. */
+function parseDuration(value: string | undefined): number | null {
+  const m = value ? /^P(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:\d+S)?)?$/.exec(value.trim()) : null;
+  if (!m || m[0] === 'P' || m[0] === 'PT') return null;
+  return ((Number(m[1] ?? 0) * 7 + Number(m[2] ?? 0)) * 24 + Number(m[3] ?? 0)) * 60 + Number(m[4] ?? 0);
+}
+
 const BYDAY: Record<string, Weekday> = { MO: 1, TU: 2, WE: 3, TH: 4, FR: 5, SA: 6, SU: 7 };
 
 /** Words that make an all-day event look like a break (DESIGN §4.13). */
@@ -360,7 +367,14 @@ export function importIcs(text: string): IcsImport {
     .sort((a, b) => (a.start?.date ?? '').localeCompare(b.start?.date ?? ''));
   for (const { ev, start } of events) {
     if (!start) continue;
-    const end = parseMoment(ev.get('DTEND')?.[0]);
+    const duration = parseDuration(ev.get('DURATION')?.[0]?.value);
+    const end =
+      parseMoment(ev.get('DTEND')?.[0]) ??
+      (duration == null
+        ? null
+        : start.time == null
+          ? { date: addDays(start.date, Math.max(1, Math.round(duration / 1440))), time: null }
+          : { date: start.date, time: minutesOf(start.time) + duration < 24 * 60 ? toHHmm(minutesOf(start.time) + duration) : null });
     const summary = unescapeText(ev.get('SUMMARY')?.[0]?.value ?? '').trim();
     if (start.time == null) {
       // All-day: DTEND is exclusive.

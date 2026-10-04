@@ -45,6 +45,24 @@ function isHolidayWeek(monday: DateKey, t: Timetable, holidays: readonly Holiday
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 
 /**
+ * Rotation results per Monday, per timetable and holiday list. Both are immutable values (the
+ * store replaces them on change), so object identity is a safe key; a search over 120 days or an
+ * export over a whole term then checks each holiday week once instead of once per date.
+ */
+interface RotationMemo {
+  index: Map<DateKey, number>;
+  holidayWeek: Map<DateKey, boolean>;
+}
+const memo = new WeakMap<Timetable, WeakMap<readonly Holiday[], RotationMemo>>();
+function memoFor(t: Timetable, holidays: readonly Holiday[]): RotationMemo {
+  let byHolidays = memo.get(t);
+  if (!byHolidays) memo.set(t, (byHolidays = new WeakMap()));
+  let m = byHolidays.get(holidays);
+  if (!m) byHolidays.set(holidays, (m = { index: new Map(), holidayWeek: new Map() }));
+  return m;
+}
+
+/**
  * Which week of the rotation a date falls in (R-3): continuous ISO weeks counted from the
  * anchor Monday, not advancing through holiday-only weeks when `skipHolidayWeeks` is on.
  * A week that is itself all holiday has no lessons, so its own index doesn't matter.
@@ -56,17 +74,25 @@ export function resolveWeekType(
 ): { index: number; label: string } {
   const { weeks: cycle, anchorIndex, skipHolidayWeeks } = timetable.rotation;
   if (cycle <= 1) return { index: 0, label: 'A' };
-  const anchor = mondayOf(timetable.rotation.anchor);
   const monday = mondayOf(date);
-  const weeks = Math.round(diffDays(monday, anchor) / 7);
-  let skipped = 0;
-  if (skipHolidayWeeks && holidays.length > 0 && Math.abs(weeks) > 1) {
-    const step = Math.sign(weeks);
-    for (let w = step; Math.abs(w) < Math.abs(weeks); w += step) {
-      if (isHolidayWeek(addDays(anchor, w * 7), timetable, holidays)) skipped++;
+  const m = memoFor(timetable, holidays);
+  let index = m.index.get(monday);
+  if (index == null) {
+    const anchor = mondayOf(timetable.rotation.anchor);
+    const weeks = Math.round(diffDays(monday, anchor) / 7);
+    let skipped = 0;
+    if (skipHolidayWeeks && holidays.length > 0 && Math.abs(weeks) > 1) {
+      const step = Math.sign(weeks);
+      for (let w = step; Math.abs(w) < Math.abs(weeks); w += step) {
+        const between = addDays(anchor, w * 7);
+        let off = m.holidayWeek.get(between);
+        if (off == null) m.holidayWeek.set(between, (off = isHolidayWeek(between, timetable, holidays)));
+        if (off) skipped++;
+      }
     }
+    index = mod(anchorIndex + Math.sign(weeks) * (Math.abs(weeks) - skipped), cycle);
+    m.index.set(monday, index);
   }
-  const index = mod(anchorIndex + Math.sign(weeks) * (Math.abs(weeks) - skipped), cycle);
   return { index, label: WEEK_LABELS[index] ?? String(index + 1) };
 }
 
@@ -95,7 +121,8 @@ export function lessonTimes(lesson: Lesson, t: Timetable): { periodIndex: number
   return { periodIndex: i, start: lesson.time?.start ?? first.start, end: lesson.time?.end ?? last.end };
 }
 
-export function occurrencesOn(date: DateKey, schedule: Schedule): Occurrence[] {
+/** A date's lessons as occurrences (R-4). `only` narrows to some lessons, which hot searches use. */
+export function occurrencesOn(date: DateKey, schedule: Schedule, only?: (lesson: Lesson) => boolean): Occurrence[] {
   const t = timetableFor(date, schedule.timetables);
   if (!t || isHoliday(date, schedule.holidays)) return [];
   const day = weekdayOf(date);
@@ -103,7 +130,7 @@ export function occurrencesOn(date: DateKey, schedule: Schedule): Occurrence[] {
   const week = resolveWeekType(date, t, schedule.holidays).index;
   const out: Occurrence[] = [];
   for (const lesson of t.lessons) {
-    if (lesson.day !== day || lesson.week !== week) continue;
+    if (lesson.day !== day || lesson.week !== week || (only && !only(lesson))) continue;
     const times = lessonTimes(lesson, t);
     if (!times) continue;
     out.push({
@@ -163,7 +190,7 @@ export function nextOccurrenceOfLesson(
   const target = t.lessons.find((l) => l.id === id) as Lesson;
   for (const date of searchDates(toDateKey(from), own, horizon)) {
     if (weekdayOf(date) !== target.day || !coversDate(t, date)) continue;
-    const occ = occurrencesOn(date, own).find((o) => o.lesson.id === id);
+    const occ = occurrencesOn(date, own, (l) => l.id === id)[0];
     if (occ && occ.start > from) return occ;
   }
   return null;
@@ -181,10 +208,11 @@ export function nextLessonOfSubject(
   holidays: readonly Holiday[],
   horizon = NEXT_LESSON_HORIZON_DAYS,
 ): Occurrence | null {
-  const schedule: Schedule = { timetables: [...timetables], holidays: [...holidays] };
+  // The same arrays, not copies: the rotation memo is keyed on them.
+  const schedule: Schedule = { timetables, holidays };
   const today = toDateKey(from);
   for (const date of searchDates(today, schedule, horizon)) {
-    const own = occurrencesOn(date, schedule).filter((o) => o.lesson.subjectId === subjectId);
+    const own = occurrencesOn(date, schedule, (l) => l.subjectId === subjectId);
     if (date === today && own.some((o) => o.start <= from)) continue;
     const next = own.find((o) => o.start > from);
     if (next) return next;
