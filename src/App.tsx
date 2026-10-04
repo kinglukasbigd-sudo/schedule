@@ -11,10 +11,11 @@ import { SheetHost } from '@/features/sheets/SheetHost';
 import { TasksScreen } from '@/features/tasks/TasksScreen';
 import { TodayScreen } from '@/features/today/TodayScreen';
 import { WeekScreen } from '@/features/week/WeekScreen';
-import { setLanguage } from '@/i18n';
+import i18n, { setLanguage } from '@/i18n';
 import { cx } from '@/lib/cx';
 import { fade, spring } from '@/lib/motion';
 import { useApplyAppearance } from '@/lib/useTheme';
+import { onDataError } from '@/state/data';
 import { useSettings } from '@/state/settings';
 import { bindHistory, useUI, type Tab } from '@/state/ui';
 
@@ -40,6 +41,8 @@ export function App() {
     void setLanguage(settings.language);
   }, [settings.language]);
   useEffect(() => bindHistory(), []);
+  // A write that failed after the screen already showed it (E-19).
+  useEffect(() => onDataError(() => useUI.getState().showToast({ message: i18n.t('toast.saveFailed') })), []);
 
   if (!hydrated) return null;
 

@@ -157,7 +157,8 @@
     "completed": "Готово: {{title}}",
     "reopened": "Повторно отворено: {{title}}",
     "deleted": "Избришано: {{title}}",
-    "subjectDeleted": "Избришан е предметот {{name}}"
+    "subjectDeleted": "Избришан е предметот {{name}}",
+    "saveFailed": "Не успеавме да зачуваме — меморијата на уредот е полна."
   },
   "settings": {
     "title": "Поставки",

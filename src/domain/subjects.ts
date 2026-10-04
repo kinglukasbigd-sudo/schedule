@@ -1,30 +1,27 @@
 import { fold } from '@/lib/text';
-import { SUBJECT_COLORS, type Subject, type SubjectColor } from './types';
+import { hueOfPreset, pickHue, presetOf } from '@/logic/subjects';
+import type { Subject, SubjectColor } from './types';
 
-/** Pick the least-used pastel so neighbouring subjects rarely share a colour. */
+/** The pastel a new subject gets: the v2 rule (DESIGN §2.3) shown as its preset name. */
 export function pickColor(existing: Pick<Subject, 'color'>[]): SubjectColor {
-  const counts = new Map<SubjectColor, number>(SUBJECT_COLORS.map((c) => [c, 0]));
-  for (const s of existing) counts.set(s.color, (counts.get(s.color) ?? 0) + 1);
-  let best: SubjectColor = SUBJECT_COLORS[0];
-  for (const c of SUBJECT_COLORS) if ((counts.get(c) ?? 0) < (counts.get(best) ?? 0)) best = c;
-  return best;
+  return presetOf(pickHue(existing.map((s) => hueOfPreset(s.color))));
 }
 
 /**
  * Colours for every subject name in a draft: existing subjects keep theirs, new names get the
- * least-used pastel in order of first appearance. Used for the editor preview and when saving,
+ * next free pastel in order of first appearance. Used for the editor preview and when saving,
  * so what you see is what you get.
  */
 export function assignColors(names: string[], existing: Pick<Subject, 'name' | 'color'>[]): Map<string, SubjectColor> {
   const result = new Map<string, SubjectColor>();
-  const used: Pick<Subject, 'color'>[] = [...existing];
+  const hues = existing.map((s) => hueOfPreset(s.color));
   for (const s of existing) result.set(fold(s.name), s.color);
   for (const name of names) {
     const key = fold(name);
     if (result.has(key)) continue;
-    const color = pickColor(used);
-    used.push({ color });
-    result.set(key, color);
+    const hue = pickHue(hues);
+    hues.push(hue);
+    result.set(key, presetOf(hue));
   }
   return result;
 }

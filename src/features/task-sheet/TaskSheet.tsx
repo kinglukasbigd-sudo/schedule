@@ -1,5 +1,4 @@
 import { addDays } from 'date-fns';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/Button';
@@ -7,8 +6,7 @@ import { Chip } from '@/components/Chip';
 import { Icon } from '@/components/Icon';
 import { Segmented } from '@/components/Segmented';
 import { Sheet } from '@/components/Sheet';
-import { db } from '@/db/db';
-import { useSubjects, useTimetable } from '@/db/hooks';
+import { useSubjects, useTasks, useTimetable } from '@/db/hooks';
 import { addTask, createSubject, updateTask, type TaskInput } from '@/db/repo';
 import { parseQuickAdd, stripDate } from '@/domain/quickAdd';
 import { fromDateKey, isValidBell, lessonOfSubjectOn, nextLessonOfSubject, toDateKey } from '@/domain/schedule';
@@ -35,15 +33,9 @@ function dueOn(tt: Timetable | null | undefined, subjectId: string | null, date:
 export function TaskSheet({ state, open, seq }: { state: TaskSheetState | null; open: boolean; seq: number }) {
   const { t } = useTranslation();
   const close = useUI((s) => s.closeSheet);
-  // Tag the result with the id it was loaded for: while a new id loads, useLiveQuery still
-  // returns the previous result, which must not seed the form.
-  const loaded = useLiveQuery(
-    async () => ({ id: state?.taskId, task: state?.taskId ? ((await db.tasks.get(state.taskId)) ?? null) : null }),
-    [state?.taskId],
-  );
+  const { tasks, ready } = useTasks();
   const editing = !!state?.taskId;
-  const ready = loaded?.id === state?.taskId;
-  const task = ready ? (loaded?.task ?? null) : null;
+  const task = state?.taskId ? (tasks.find((t) => t.id === state.taskId) ?? null) : null;
 
   return (
     <Sheet

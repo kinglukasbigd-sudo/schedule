@@ -65,5 +65,14 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
     css: false,
+    // The users' zone, so date tests don't depend on the machine; DST tests switch zones themselves.
+    env: { TZ: 'Europe/Skopje' },
+    coverage: {
+      provider: 'v8',
+      include: ['src/logic/**/*.ts'],
+      exclude: ['src/logic/**/*.test.ts', 'src/logic/types.ts'],
+      reporter: ['text-summary', 'text', 'html'],
+      thresholds: { lines: 90, statements: 90, functions: 90, branches: 90 },
+    },
   },
 });
