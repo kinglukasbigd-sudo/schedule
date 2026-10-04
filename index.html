@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en" data-theme="light" data-accent="blue">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#FBFBFA" />
+    <meta name="description" content="Your timetable in a minute. Homework, assignments and tests fall into place." />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="TERM" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <title>TERM</title>
+    <script>
+      // Paint the saved theme before the app loads, so there is no flash.
+      (function () {
+        var root = document.documentElement;
+        var boot = {};
+        try {
+          boot = JSON.parse(localStorage.getItem('term:boot') || '{}') || {};
+        } catch (e) {}
+        var theme = boot.theme === 'light' || boot.theme === 'dark' ? boot.theme : null;
+        if (!theme) theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        root.setAttribute('data-theme', theme);
+        if (boot.accent) root.setAttribute('data-accent', boot.accent);
+        if (boot.language) root.setAttribute('lang', boot.language);
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>TERM needs JavaScript to run.</noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

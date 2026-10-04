@@ -1,0 +1,239 @@
+{
+  "tabs": {
+    "label": "Hauptnavigation",
+    "today": "Heute",
+    "week": "Woche",
+    "tasks": "Aufgaben"
+  },
+  "fab": {
+    "add": "Hausaufgabe, Projekt oder Test hinzufügen"
+  },
+  "common": {
+    "back": "Zurück",
+    "cancel": "Abbrechen",
+    "close": "Schließen",
+    "continue": "Weiter",
+    "delete": "Löschen",
+    "save": "Sichern",
+    "undo": "Rückgängig"
+  },
+  "kind": {
+    "homework": "Hausaufgabe",
+    "assignment": "Projekt",
+    "test": "Test"
+  },
+  "time": {
+    "today": "Heute",
+    "tomorrow": "Morgen",
+    "yesterday": "Gestern",
+    "todayInline": "heute",
+    "tomorrowInline": "morgen",
+    "yesterdayInline": "gestern",
+    "inMinutes_one": "in {{count}} Min.",
+    "inMinutes_other": "in {{count}} Min.",
+    "inHours_one": "in {{count}} Stunde",
+    "inHours_other": "in {{count}} Stunden",
+    "inHoursMinutes": "in {{h}} Std. {{m}} Min."
+  },
+  "due": {
+    "day": "Fällig: {{day}}",
+    "dayTime": "Fällig: {{day}} um {{time}}",
+    "inDays_one": "in {{count}} Tag",
+    "inDays_other": "in {{count}} Tagen",
+    "overdue": "Überfällig · {{day}}"
+  },
+  "today": {
+    "title": "Heute",
+    "nextUp": "Als Nächstes",
+    "then": "Danach",
+    "markDone": "Erledigt",
+    "allClear": "Alles erledigt",
+    "allClearBody": "Nichts fällig. Genieß es — oder trag mit + ein, was ansteht.",
+    "lessonsToday": "Heutige Stunden",
+    "lessonsOn": "Stunden · {{day}}",
+    "noSchool": "Heute keine Schule.",
+    "doneForToday": "Für heute fertig.",
+    "noLessonsSoon": "Keine Stunden in den nächsten zwei Wochen.",
+    "now": "Jetzt",
+    "comingUp": "Demnächst",
+    "noTimetable": "Stundenplan hinzufügen",
+    "noTimetableBody": "Hausaufgaben und Tests ordnen sich von selbst, sobald TERM deine Woche kennt.",
+    "addTimetable": "Stundenplan hinzufügen"
+  },
+  "week": {
+    "title": "Woche",
+    "thisWeek": "Diese Woche",
+    "previous": "Vorherige Woche",
+    "next": "Nächste Woche",
+    "today": "Heute",
+    "period": "Stunde",
+    "free": "Frei",
+    "gridLabel": "Stundenplan, {{range}}",
+    "dueCount_one": "{{count}} fällig",
+    "dueCount_other": "{{count}} fällig"
+  },
+  "tasks": {
+    "title": "Aufgaben",
+    "openCount_one": "{{count}} offen",
+    "openCount_other": "{{count}} offen",
+    "emptyTitle": "Nichts zu tun",
+    "emptyBody": "Wenn Hausaufgaben anstehen, tipp auf + — sie landen hier, sortiert nach Fälligkeit.",
+    "done_one": "Erledigt · {{count}}",
+    "done_other": "Erledigt · {{count}}",
+    "markDone": "„{{title}}“ als erledigt markieren",
+    "markOpen": "„{{title}}“ als offen markieren",
+    "bucket": {
+      "overdue": "Überfällig",
+      "today": "Heute",
+      "tomorrow": "Morgen",
+      "week": "Diese Woche",
+      "later": "Später"
+    }
+  },
+  "taskSheet": {
+    "newTitle": "Neu",
+    "editTitle": "Bearbeiten",
+    "kind": "Art",
+    "titleLabel": "Was ist fällig?",
+    "placeholder": {
+      "homework": "Aufgaben 4–7, Seite 112",
+      "assignment": "Aufsatz über Hamlet",
+      "test": "Test zu Kapitel 3"
+    },
+    "tip": "Tipp: Schreib „Mathe Test Freitag“ — Fach, Art und Datum füllen sich aus.",
+    "subject": "Fach",
+    "newSubject": "Neues Fach",
+    "newSubjectPlaceholder": "Name des Fachs",
+    "due": "Fällig",
+    "nextLesson": "Nächste Stunde · {{day}}",
+    "pickDate": "Datum wählen",
+    "atLesson": "{{subject}} um {{time}}",
+    "notes": "Notiz",
+    "notesPlaceholder": "Seiten, Links, wen du fragen kannst…",
+    "addNote": "Notiz hinzufügen",
+    "add": {
+      "homework": "Hausaufgabe hinzufügen",
+      "assignment": "Projekt hinzufügen",
+      "test": "Test hinzufügen"
+    }
+  },
+  "lesson": {
+    "room": "Raum {{room}}",
+    "free": "Freistunde",
+    "dueHere": "Fällig in dieser Stunde",
+    "nothingDue": "Für diese Stunde ist nichts fällig.",
+    "addForLesson": "Für diese Stunde hinzufügen"
+  },
+  "subjectSheet": {
+    "title": "Fach",
+    "name": "Name",
+    "color": "Farbe"
+  },
+  "colors": {
+    "rose": "Rosé",
+    "coral": "Koralle",
+    "amber": "Bernstein",
+    "lime": "Limette",
+    "mint": "Minze",
+    "teal": "Petrol",
+    "sky": "Himmel",
+    "iris": "Iris",
+    "lilac": "Flieder",
+    "orchid": "Orchidee",
+    "stone": "Stein"
+  },
+  "accents": {
+    "blue": "Blau",
+    "indigo": "Indigo",
+    "violet": "Violett",
+    "pink": "Pink",
+    "red": "Rot",
+    "orange": "Orange",
+    "green": "Grün",
+    "graphite": "Graphit"
+  },
+  "toast": {
+    "added": "Hinzugefügt · fällig {{day}}",
+    "completed": "Erledigt: {{title}}",
+    "reopened": "Wieder offen: {{title}}",
+    "deleted": "Gelöscht: {{title}}",
+    "subjectDeleted": "{{name}} gelöscht"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "appearance": "Darstellung",
+    "theme": "Design",
+    "themes": {
+      "system": "System",
+      "light": "Hell",
+      "dark": "Dunkel"
+    },
+    "accent": "Akzentfarbe",
+    "language": "Sprache",
+    "timetable": "Stundenplan",
+    "editTimetable": "Stundenplan bearbeiten",
+    "importAgain": "Neuen Stundenplan importieren",
+    "subjects": "Fächer",
+    "noSubjects": "Fächer erscheinen hier, sobald du einen Stundenplan hinzufügst.",
+    "data": "Deine Daten",
+    "export": "Backup exportieren",
+    "exported": "Backup gespeichert",
+    "import": "Aus Backup wiederherstellen",
+    "imported": "Backup wiederhergestellt",
+    "importFailed": "Diese Datei ist kein TERM-Backup.",
+    "erase": "Alles löschen",
+    "eraseConfirm": "Nochmal tippen, um alles zu löschen",
+    "erased": "Alles gelöscht",
+    "footer": "TERM {{version}} · Alles bleibt auf diesem Gerät."
+  },
+  "editor": {
+    "days": "Schultage",
+    "periodN": "{{n}}. Stunde",
+    "editTimes": "Zeiten der {{n}}. Stunde ändern",
+    "cellLabel": "{{subject}}, {{day}}, {{n}}. Stunde",
+    "emptyCellLabel": "Frei, {{day}}, {{n}}. Stunde. Stunde hinzufügen",
+    "addPeriod": "Stunde hinzufügen",
+    "removePeriod": "Entfernen",
+    "subject": "Fach",
+    "subjectPlaceholder": "z. B. Biologie",
+    "room": "Raum",
+    "roomPlaceholder": "Optional",
+    "clear": "Leeren",
+    "start": "Beginn",
+    "end": "Ende",
+    "invalidTimes": "Die Stunde muss nach ihrem Beginn enden.",
+    "autosave": "Änderungen werden automatisch gesichert"
+  },
+  "onboarding": {
+    "welcomeTitle": "Dein Stundenplan in einer Minute.",
+    "welcomeBody": "Fotografier ihn, lad ihn hoch oder tipp ihn ein. Hausaufgaben, Projekte und Tests ordnen sich dann von selbst darum.",
+    "start": "Stundenplan hinzufügen",
+    "skip": "Ohne Stundenplan starten",
+    "methodTitle": "Wie hast du ihn?",
+    "methodBody": "Nimm, was am schnellsten geht. Korrigieren kannst du danach alles.",
+    "scanTitle": "Foto, Screenshot oder PDF",
+    "scanBody": "TERM liest ihn für dich",
+    "typeTitle": "Eintippen",
+    "typeBody": "Etwa eine Minute — eine Zeile pro Tag",
+    "private": "Wird auf deinem Gerät gelesen. Nichts wird hochgeladen.",
+    "typeHeading": "Tipp deine Woche ein",
+    "typeHint": "Fächer der Reihe nach, mit Kommas getrennt. Lass eine Lücke für Freistunden.",
+    "typePlaceholder": "Mathe, Englisch, Bio, Bio, Sport",
+    "addSaturday": "Samstag hinzufügen",
+    "typeError": "Füge mindestens ein Fach hinzu, um fortzufahren.",
+    "phase": {
+      "reading": "Datei wird geöffnet…",
+      "recognizing": "Stundenplan wird gelesen…",
+      "arranging": "Woche wird geordnet…"
+    },
+    "onDevice": "Das passiert auf deinem Handy. Beim ersten Scan wird der Leser einmalig geladen.",
+    "error": {
+      "unsupported": "Dieser Dateityp wird nicht unterstützt. Versuch ein Foto, einen Screenshot oder ein PDF.",
+      "no-timetable": "In dieser Datei haben wir keinen Stundenplan gefunden. Versuch ein schärferes Foto oder tipp ihn ein — dauert nur eine Minute.",
+      "failed": "Das Lesen hat nicht geklappt. Der erste Scan braucht Internet; du kannst ihn auch eintippen."
+    },
+    "reviewTitle": "Stimmt das so?",
+    "reviewBody": "{{lessons}} Stunden, {{subjects}} Fächer. Tipp auf etwas, um es zu korrigieren.",
+    "looksGood": "Passt so"
+  }
+}

@@ -1,0 +1,239 @@
+{
+  "tabs": {
+    "label": "Main",
+    "today": "Today",
+    "week": "Week",
+    "tasks": "Tasks"
+  },
+  "fab": {
+    "add": "Add homework, assignment or test"
+  },
+  "common": {
+    "back": "Back",
+    "cancel": "Cancel",
+    "close": "Close",
+    "continue": "Continue",
+    "delete": "Delete",
+    "save": "Save",
+    "undo": "Undo"
+  },
+  "kind": {
+    "homework": "Homework",
+    "assignment": "Assignment",
+    "test": "Test"
+  },
+  "time": {
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "yesterday": "Yesterday",
+    "todayInline": "today",
+    "tomorrowInline": "tomorrow",
+    "yesterdayInline": "yesterday",
+    "inMinutes_one": "in {{count}} min",
+    "inMinutes_other": "in {{count}} min",
+    "inHours_one": "in {{count}} hour",
+    "inHours_other": "in {{count}} hours",
+    "inHoursMinutes": "in {{h}} h {{m}} min"
+  },
+  "due": {
+    "day": "Due {{day}}",
+    "dayTime": "Due {{day}} at {{time}}",
+    "inDays_one": "in {{count}} day",
+    "inDays_other": "in {{count}} days",
+    "overdue": "Overdue · {{day}}"
+  },
+  "today": {
+    "title": "Today",
+    "nextUp": "Next up",
+    "then": "Then",
+    "markDone": "Mark done",
+    "allClear": "All clear",
+    "allClearBody": "Nothing due. Enjoy it — or add what's coming with +.",
+    "lessonsToday": "Today's lessons",
+    "lessonsOn": "Lessons · {{day}}",
+    "noSchool": "No school today.",
+    "doneForToday": "Done for today.",
+    "noLessonsSoon": "No lessons in the next two weeks.",
+    "now": "Now",
+    "comingUp": "Coming up",
+    "noTimetable": "Add your timetable",
+    "noTimetableBody": "Homework and tests fall into place once TERM knows your week.",
+    "addTimetable": "Add timetable"
+  },
+  "week": {
+    "title": "Week",
+    "thisWeek": "This week",
+    "previous": "Previous week",
+    "next": "Next week",
+    "today": "Today",
+    "period": "Period",
+    "free": "Free",
+    "gridLabel": "Timetable, {{range}}",
+    "dueCount_one": "{{count}} due",
+    "dueCount_other": "{{count}} due"
+  },
+  "tasks": {
+    "title": "Tasks",
+    "openCount_one": "{{count}} to do",
+    "openCount_other": "{{count}} to do",
+    "emptyTitle": "Nothing to do",
+    "emptyBody": "When homework comes up, tap + and it lands here, sorted by when it's due.",
+    "done_one": "Done · {{count}}",
+    "done_other": "Done · {{count}}",
+    "markDone": "Mark “{{title}}” done",
+    "markOpen": "Mark “{{title}}” not done",
+    "bucket": {
+      "overdue": "Overdue",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "week": "This week",
+      "later": "Later"
+    }
+  },
+  "taskSheet": {
+    "newTitle": "New",
+    "editTitle": "Edit",
+    "kind": "Type",
+    "titleLabel": "What is due?",
+    "placeholder": {
+      "homework": "Exercises 4–7, page 112",
+      "assignment": "Essay on Hamlet",
+      "test": "Chapter 3 test"
+    },
+    "tip": "Tip: type “math test friday” — subject, type and date fill in.",
+    "subject": "Subject",
+    "newSubject": "New subject",
+    "newSubjectPlaceholder": "Subject name",
+    "due": "Due",
+    "nextLesson": "Next lesson · {{day}}",
+    "pickDate": "Pick a date",
+    "atLesson": "{{subject}} at {{time}}",
+    "notes": "Note",
+    "notesPlaceholder": "Pages, links, who to ask…",
+    "addNote": "Add a note",
+    "add": {
+      "homework": "Add homework",
+      "assignment": "Add assignment",
+      "test": "Add test"
+    }
+  },
+  "lesson": {
+    "room": "Room {{room}}",
+    "free": "Free period",
+    "dueHere": "Due this lesson",
+    "nothingDue": "Nothing due for this lesson.",
+    "addForLesson": "Add for this lesson"
+  },
+  "subjectSheet": {
+    "title": "Subject",
+    "name": "Name",
+    "color": "Colour"
+  },
+  "colors": {
+    "rose": "Rose",
+    "coral": "Coral",
+    "amber": "Amber",
+    "lime": "Lime",
+    "mint": "Mint",
+    "teal": "Teal",
+    "sky": "Sky",
+    "iris": "Iris",
+    "lilac": "Lilac",
+    "orchid": "Orchid",
+    "stone": "Stone"
+  },
+  "accents": {
+    "blue": "Blue",
+    "indigo": "Indigo",
+    "violet": "Violet",
+    "pink": "Pink",
+    "red": "Red",
+    "orange": "Orange",
+    "green": "Green",
+    "graphite": "Graphite"
+  },
+  "toast": {
+    "added": "Added · due {{day}}",
+    "completed": "Done: {{title}}",
+    "reopened": "Reopened: {{title}}",
+    "deleted": "Deleted: {{title}}",
+    "subjectDeleted": "Deleted {{name}}"
+  },
+  "settings": {
+    "title": "Settings",
+    "appearance": "Appearance",
+    "theme": "Theme",
+    "themes": {
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "accent": "Accent colour",
+    "language": "Language",
+    "timetable": "Timetable",
+    "editTimetable": "Edit timetable",
+    "importAgain": "Import a new timetable",
+    "subjects": "Subjects",
+    "noSubjects": "Subjects appear here once you add a timetable.",
+    "data": "Your data",
+    "export": "Export backup",
+    "exported": "Backup saved",
+    "import": "Restore from backup",
+    "imported": "Backup restored",
+    "importFailed": "That file isn't a TERM backup.",
+    "erase": "Erase everything",
+    "eraseConfirm": "Tap again to erase everything",
+    "erased": "Everything erased",
+    "footer": "TERM {{version}} · Everything stays on this device."
+  },
+  "editor": {
+    "days": "School days",
+    "periodN": "Period {{n}}",
+    "editTimes": "Change times of period {{n}}",
+    "cellLabel": "{{subject}}, {{day}}, period {{n}}",
+    "emptyCellLabel": "Free, {{day}}, period {{n}}. Add a lesson",
+    "addPeriod": "Add period",
+    "removePeriod": "Remove",
+    "subject": "Subject",
+    "subjectPlaceholder": "e.g. Biology",
+    "room": "Room",
+    "roomPlaceholder": "Optional",
+    "clear": "Clear",
+    "start": "Starts",
+    "end": "Ends",
+    "invalidTimes": "The lesson has to end after it starts.",
+    "autosave": "Changes save automatically"
+  },
+  "onboarding": {
+    "welcomeTitle": "Your timetable in a minute.",
+    "welcomeBody": "Snap it, upload it or type it in. Homework, assignments and tests then fall into place around it.",
+    "start": "Add my timetable",
+    "skip": "Start without one",
+    "methodTitle": "How do you have it?",
+    "methodBody": "Pick whatever is quickest. You can fix anything afterwards.",
+    "scanTitle": "Photo, screenshot or PDF",
+    "scanBody": "TERM reads it for you",
+    "typeTitle": "Type it in",
+    "typeBody": "About a minute — one line per day",
+    "private": "Read on your device. Nothing is uploaded.",
+    "typeHeading": "Type your week",
+    "typeHint": "Subjects in order, separated by commas. Leave a gap for a free period.",
+    "typePlaceholder": "Math, English, Biology, Biology, PE",
+    "addSaturday": "Add Saturday",
+    "typeError": "Add at least one subject to continue.",
+    "phase": {
+      "reading": "Opening your file…",
+      "recognizing": "Reading your timetable…",
+      "arranging": "Arranging your week…"
+    },
+    "onDevice": "This happens on your phone. The first scan downloads the reader once.",
+    "error": {
+      "unsupported": "That file type isn't supported. Try a photo, a screenshot or a PDF.",
+      "no-timetable": "We couldn't find a timetable in that file. Try a sharper photo, or type it in — it only takes a minute.",
+      "failed": "Reading the file didn't work. The first scan needs an internet connection; you can also type it in."
+    },
+    "reviewTitle": "Does this look right?",
+    "reviewBody": "{{lessons}} lessons, {{subjects}} subjects. Tap anything to fix it.",
+    "looksGood": "Looks good"
+  }
+}
